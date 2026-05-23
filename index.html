@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nozomi Summary — SOC OT Alert Transform</title>
+  <meta name="description" content="Transform Nozomi Networks Vantage alert export into formatted Excel summary. Runs entirely in your browser — zero uploads.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/x-icon" href="icon.ico">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ── Header ─────────────────────────────────────────────── -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand">
+        <img class="brand-icon" src="icon.ico" alt="Mr.Robot" aria-hidden="true">
+        <div class="brand-text">
+          <span class="brand-name">Nozomi Summary</span>
+          <span class="brand-sub">by Mr.Robot · SOC OT</span>
+        </div>
+      </div>
+      <span class="header-tag">v1.0</span>
+    </div>
+  </header>
+
+  <!-- ── Main ───────────────────────────────────────────────── -->
+  <main class="site-main">
+    <div class="hero-text">
+      <h1>Transform Nozomi Alert Export</h1>
+      <p>Drop your Vantage <code>.xlsx</code> export and get a clean, formatted Excel summary — instantly, in your browser.</p>
+    </div>
+
+    <div class="app-card" id="app-card">
+
+      <!-- ══════════════════════════════════════════════════════
+           SECTION: UPLOAD / PREVIEW
+           ══════════════════════════════════════════════════════ -->
+      <section class="app-section active" id="sec-upload">
+
+        <!-- Drop Zone -->
+        <div class="drop-zone" id="drop-zone" role="button" tabindex="0" aria-label="Drop zone — click or drag a .xlsx file here">
+          <input type="file" id="file-input" accept=".xlsx" aria-hidden="true">
+
+          <!-- Idle content -->
+          <div class="dz-idle" id="dz-idle">
+            <div class="dz-illustration" aria-hidden="true">
+              <span class="dz-icon-main">📊</span>
+              <span class="dz-sparkle s1">✦</span>
+              <span class="dz-sparkle s2">✦</span>
+              <span class="dz-sparkle s3">✦</span>
+            </div>
+            <p class="dz-title">Drop your Nozomi export here</p>
+            <p class="dz-sub">or <span class="dz-browse-link">click to browse files</span></p>
+            <p class="dz-hint">Supports: <strong>.xlsx</strong> only</p>
+          </div>
+
+          <!-- Selected content (hidden until file picked) -->
+          <div class="dz-selected hidden" id="dz-selected" aria-live="polite">
+            <span class="dz-sel-check" aria-hidden="true">✅</span>
+            <div class="dz-sel-info">
+              <p class="dz-sel-name" id="sel-name">filename.xlsx</p>
+              <p class="dz-sel-size" id="sel-size">—</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Remove file button -->
+        <div class="file-action-row hidden" id="file-action-row">
+          <button class="btn-remove-file" id="btn-remove-file" aria-label="Remove selected file">
+            ✕ Remove file
+          </button>
+        </div>
+
+        <!-- Shift Selector -->
+        <div class="shift-row" role="group" aria-label="Shift selection">
+          <span class="shift-label-text">Shift</span>
+          <div class="shift-btns">
+            <button class="shift-btn active" data-shift="Day" id="btn-shift-day" aria-pressed="true">
+              <span aria-hidden="true">☀️</span> Day
+            </button>
+            <button class="shift-btn" data-shift="Night" id="btn-shift-night" aria-pressed="false">
+              <span aria-hidden="true">🌙</span> Night
+            </button>
+          </div>
+        </div>
+
+        <!-- Preview Panel (shown after file parsed) -->
+        <div class="preview-panel hidden" id="preview-panel">
+          <div class="preview-bar">
+            <span class="preview-label">📋 Preview</span>
+            <span class="preview-stats" id="preview-stats" aria-live="polite"></span>
+          </div>
+          <div class="tbl-scroll" role="region" aria-label="Data preview table" tabindex="0">
+            <table class="prev-tbl" id="prev-tbl">
+              <thead><tr id="prev-thead"></tr></thead>
+              <tbody id="prev-tbody"></tbody>
+            </table>
+          </div>
+          <p class="preview-more" id="preview-more" aria-live="polite"></p>
+        </div>
+
+        <!-- Transform CTA -->
+        <button class="btn-cta hidden" id="btn-transform" aria-label="Transform and download Excel file">
+          <span class="btn-cta-icon" aria-hidden="true">⚡</span>
+          <span class="btn-cta-text">Transform &amp; Download</span>
+        </button>
+
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════
+           SECTION: PROCESSING
+           ══════════════════════════════════════════════════════ -->
+      <section class="app-section hidden" id="sec-processing" aria-live="assertive">
+        <div class="state-body">
+          <div class="proc-spinner" aria-hidden="true">
+            <span class="proc-icon">⚡</span>
+            <span class="proc-ring"></span>
+          </div>
+          <p class="proc-title">Transforming...</p>
+          <p class="proc-detail" id="proc-detail">Preparing your data...</p>
+          <div class="prog-track" role="progressbar" aria-label="Processing progress">
+            <div class="prog-fill" id="prog-fill"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════
+           SECTION: DONE
+           ══════════════════════════════════════════════════════ -->
+      <section class="app-section hidden" id="sec-done" aria-live="assertive">
+        <div class="state-body">
+          <div class="done-badge" aria-hidden="true">
+            <span class="done-check">✅</span>
+            <span class="done-ring"></span>
+          </div>
+          <h2 class="done-title">Done! Your summary is ready.</h2>
+          <div class="done-file-card">
+            <span class="done-file-icon" aria-hidden="true">📄</span>
+            <span class="done-file-name" id="done-fname">Nozomi_Summary_....xlsx</span>
+          </div>
+          <div class="done-btns">
+            <button class="btn-cta done-cta" id="btn-download">
+              <span aria-hidden="true">⬇</span>
+              <span>Download</span>
+            </button>
+            <button class="btn-ghost" id="btn-another">🔄 Transform Another</button>
+          </div>
+          <p class="mem-cleared" aria-live="polite">🗑️ Source file cleared from memory</p>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════
+           SECTION: ERROR
+           ══════════════════════════════════════════════════════ -->
+      <section class="app-section hidden" id="sec-error" aria-live="assertive">
+        <div class="state-body">
+          <div class="err-icon" aria-hidden="true">❌</div>
+          <p class="err-heading">Something went wrong</p>
+          <p class="err-msg" id="err-msg">An unexpected error occurred.</p>
+          <button class="btn-ghost" id="btn-try-another">Try Another File</button>
+        </div>
+      </section>
+
+    </div><!-- /.app-card -->
+  </main>
+
+  <!-- ── Footer ─────────────────────────────────────────────── -->
+  <footer class="site-footer">
+    <div class="privacy-badge">
+      <span class="privacy-icon" aria-hidden="true">🔒</span>
+      <span>Your file <strong>never leaves your device</strong> — all processing happens locally in your browser. Zero network uploads.</span>
+    </div>
+    <div class="copyright">
+      Developed by <strong>Mr.Robot</strong> · PTT Digital · OT SOC · 2026
+    </div>
+  </footer>
+
+  <!-- SheetJS CE — Excel read/write in browser -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
