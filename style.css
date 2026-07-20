@@ -884,6 +884,139 @@ code {
   display: none !important;
 }
 
+/* ── Install Card (auto extension) ──────────────────────────── */
+.install-card {
+  max-width: 760px;
+}
+
+.install-badge {
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent-light);
+  background: var(--accent-subtle);
+  border: 1px solid rgba(124, 58, 237, 0.3);
+  padding: 4px 12px;
+  border-radius: 100px;
+  letter-spacing: 0.3px;
+}
+
+.install-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 22px;
+  padding-right: 90px;
+}
+
+.install-icon {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 4px 12px rgba(124, 58, 237, 0.3));
+}
+
+.install-title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--text-primary);
+}
+
+.install-sub {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  line-height: 1.6;
+}
+
+.feat-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  margin-bottom: 8px;
+}
+
+.feat-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.feat-list li span {
+  font-size: 17px;
+  line-height: 1;
+  flex-shrink: 0;
+  width: 24px;
+  text-align: center;
+}
+
+.install-steps {
+  margin-top: 20px;
+  background: var(--surface);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 14px 20px;
+}
+
+.install-steps summary {
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  list-style: none;
+  outline: none;
+}
+
+.install-steps summary::before {
+  content: '▸ ';
+  color: var(--accent-light);
+}
+
+.install-steps[open] summary::before {
+  content: '▾ ';
+}
+
+.install-steps ol {
+  margin: 14px 0 2px 20px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  line-height: 1.6;
+}
+
+.install-steps strong {
+  color: var(--text-primary);
+}
+
+/* ── "or" divider ───────────────────────────────────────────── */
+.or-divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 760px;
+  color: var(--text-muted);
+  font-size: 13px;
+  letter-spacing: 0.3px;
+}
+
+.or-divider::before,
+.or-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--card-border);
+}
+
 /* ── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 640px) {
   .site-header {

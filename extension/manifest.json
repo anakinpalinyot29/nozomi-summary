@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Nozomi SOAR Robot",
+  "version": "1.0.0",
+  "description": "One-click export of a Nozomi Vantage shift's alerts into a formatted Excel summary — straight from your logged-in Vantage tab. No install, no Python.",
+  "permissions": ["webRequest", "scripting", "storage", "tabs", "downloads"],
+  "host_permissions": ["https://*.vantage.nozominetworks.io/*"],
+  "background": { "service_worker": "background.js" },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Nozomi SOAR Robot"
+  }
+}

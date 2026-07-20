@@ -1,0 +1,105 @@
+:root {
+  color-scheme: light dark;
+  --accent: #E97132;
+  --accent-ink: #fff;
+  --muted: rgba(127, 127, 127, .16);
+  --muted-2: rgba(127, 127, 127, .30);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  width: 340px;
+  margin: 0;
+  padding: 0;
+  font-family: "Segoe UI", system-ui, "Sarabun", sans-serif;
+  font-size: 13px;
+}
+
+.hd {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #E97132, #c85a20);
+  color: #fff;
+}
+.hd-icon { font-size: 24px; }
+.hd-title { font-weight: 700; font-size: 15px; }
+.hd-sub { font-size: 11px; opacity: .85; }
+
+.bd { padding: 14px 16px 16px; }
+
+.status-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.chip {
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--muted);
+}
+.chip.ok  { color: #16a34a; background: rgba(22, 163, 74, .14); }
+.chip.bad { color: #dc2626; background: rgba(220, 38, 38, .14); }
+
+.field { display: block; margin-bottom: 12px; }
+.field-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  opacity: .7;
+  margin-bottom: 5px;
+}
+input[type="date"] {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 13px;
+  border: 1px solid var(--muted-2);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+}
+
+.shift-btns { display: flex; gap: 6px; }
+.shift-btn {
+  flex: 1;
+  padding: 8px 4px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--muted-2);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.shift-btn.active {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+
+.cta {
+  width: 100%;
+  margin-top: 4px;
+  padding: 11px;
+  font-size: 14px;
+  font-weight: 700;
+  border: 0;
+  border-radius: 9px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+.cta:disabled { opacity: .5; cursor: default; }
+
+.status {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.status.ok  { background: rgba(22, 163, 74, .12); }
+.status.bad { background: rgba(220, 38, 38, .12); }
+.status.busy { background: rgba(233, 113, 50, .14); }

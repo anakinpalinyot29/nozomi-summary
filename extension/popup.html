@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header class="hd">
+    <span class="hd-icon">🤖</span>
+    <div>
+      <div class="hd-title">Nozomi SOAR Robot</div>
+      <div class="hd-sub">export กะ → Excel · SOC OT</div>
+    </div>
+  </header>
+
+  <main class="bd">
+    <div class="status-row">
+      <span class="chip" id="chip-tab">tab: —</span>
+      <span class="chip" id="chip-org">org: —</span>
+    </div>
+
+    <label class="field">
+      <span class="field-label">วันที่ (เริ่มกะ)</span>
+      <input type="date" id="date-input">
+    </label>
+
+    <div class="field">
+      <span class="field-label">กะ</span>
+      <div class="shift-btns" role="group" aria-label="เลือกกะ">
+        <button class="shift-btn active" data-shift="Day"   id="sb-day">☀️ Day</button>
+        <button class="shift-btn"        data-shift="Night" id="sb-night">🌙 Night</button>
+        <button class="shift-btn"        data-shift="Full"  id="sb-full">📅 ทั้งวัน</button>
+      </div>
+    </div>
+
+    <button class="cta" id="btn-export">⚡ Export &amp; Download</button>
+
+    <div class="status" id="status" aria-live="polite">
+      เปิดแท็บ Vantage (ล็อกอินแล้ว) แล้วเลือกกะ+วันที่
+    </div>
+  </main>
+
+  <script src="lib/xlsx.bundle.js"></script>
+  <script src="src/shifts.js"></script>
+  <script src="src/normalize.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
