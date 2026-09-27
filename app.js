@@ -85,6 +85,10 @@ const elNameForm       = document.getElementById('name-form');
 const elNameInput      = document.getElementById('name-input');
 const elNameCancel     = document.getElementById('name-cancel');
 
+const elWhatsNew       = document.getElementById('whatsnew-dialog');
+const elWhatsNewLater  = document.getElementById('whatsnew-later');
+const elWhatsNewRead   = document.getElementById('whatsnew-read');
+
 const elPreviewPanel   = document.getElementById('preview-panel');
 const elPreviewStats   = document.getElementById('preview-stats');
 const elPrevThead      = document.getElementById('prev-thead');
@@ -117,7 +121,39 @@ document.addEventListener('DOMContentLoaded', () => {
   setupDateInput();
   setupButtons();
   setupUserName();
+  setupWhatsNew();
 });
+
+// ============================================================
+// What's New (per version; only "read" hides it — other closes
+// just dismiss it until the next visit)
+// ============================================================
+
+const KEY_WHATSNEW_SEEN = 'nz_whatsnew_seen';
+
+function setupWhatsNew() {
+  let seen = null;
+  try { seen = localStorage.getItem(KEY_WHATSNEW_SEEN); } catch (e) { /* storage blocked */ }
+  if (seen === APP_VERSION) return;
+
+  elWhatsNewLater.addEventListener('click', () => elWhatsNew.close());
+  elWhatsNewRead.addEventListener('click', () => {
+    try { localStorage.setItem(KEY_WHATSNEW_SEEN, APP_VERSION); } catch (e) { /* ignore */ }
+    elWhatsNew.close();
+  });
+  // Backdrop clicks target the dialog itself; so do clicks on its padding,
+  // so only close when the click lands outside the dialog box.
+  elWhatsNew.addEventListener('click', (e) => {
+    if (e.target !== elWhatsNew) return;
+    const r = elWhatsNew.getBoundingClientRect();
+    const inside = e.clientX >= r.left && e.clientX <= r.right &&
+                   e.clientY >= r.top && e.clientY <= r.bottom;
+    if (!inside) elWhatsNew.close();
+  });
+
+  elWhatsNew.showModal();
+  elWhatsNewRead.focus();
+}
 
 // ============================================================
 // Drop Zone Setup

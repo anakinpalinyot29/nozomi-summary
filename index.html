@@ -248,6 +248,27 @@
     </form>
   </dialog>
 
+  <!-- ── What's new (shown on load until "read" for this version) ── -->
+  <dialog class="name-dialog whatsnew-dialog" id="whatsnew-dialog" aria-labelledby="whatsnew-title">
+    <h2 class="name-title" id="whatsnew-title">🎉 มีอะไรใหม่ใน v1.1.0</h2>
+    <ul class="whatsnew-list">
+      <li><span aria-hidden="true">🌓</span><span><strong>โหมด Full Day</strong> — อัปไฟล์ 24 ชม. ไฟล์เดียว แยก Day/Night ให้เอง</span></li>
+      <li><span aria-hidden="true">📅</span><span><strong>แก้บั๊กวันที่กะ Night</strong> — คำนวณตามเวลาไทย แก้วันที่เองได้</span></li>
+      <li><span aria-hidden="true">⚠️</span><span>เตือนเมื่อมีแถวอยู่นอกช่วงเวลากะ</span></li>
+      <li><span aria-hidden="true">👤</span><span>ครั้งแรกที่ export จะถามชื่อ เพื่อเก็บสถิติการใช้งาน
+        <small>(ไม่เก็บเนื้อหา alert — ไฟล์ไม่ออกจากเครื่อง)</small></span></li>
+    </ul>
+    <div class="whatsnew-ext">
+      <p><span aria-hidden="true">🤖</span> <strong>ใช้ Extension อยู่?</strong> ต้องอัปเดตเป็น 1.1.0</p>
+      <a class="btn-ghost whatsnew-dl" href="nozomi-soar-robot-extension.zip" download>⬇ ดาวน์โหลด Extension</a>
+      <p class="whatsnew-steps">แตกไฟล์ทับโฟลเดอร์เดิม → กด 🔄 ที่ <code>chrome://extensions</code></p>
+    </div>
+    <div class="name-btns">
+      <button type="button" class="btn-ghost" id="whatsnew-later">ปิดไว้ก่อน</button>
+      <button type="button" class="btn-cta name-save" id="whatsnew-read">อ่านประกาศนี้แล้ว</button>
+    </div>
+  </dialog>
+
   <!-- SheetJS CE 0.20.3 (patched) parses the untrusted upload; xlsx-js-style
        (SheetJS 0.18.5 fork, unmaintained) only writes our own styled output. -->
   <script src="lib/xlsx-read.full.min.js"></script>

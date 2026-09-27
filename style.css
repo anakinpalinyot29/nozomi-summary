@@ -708,6 +708,55 @@ code {
   font-size: 14px;
 }
 
+/* ── What's New Dialog ──────────────────────────────────────── */
+.whatsnew-dialog {
+  width: min(480px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+
+.whatsnew-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.whatsnew-list li {
+  display: flex;
+  gap: 10px;
+}
+
+.whatsnew-list small {
+  display: block;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.whatsnew-ext {
+  margin-top: 18px;
+  padding: 14px 16px;
+  font-size: 14px;
+  background: var(--surface);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+}
+
+.whatsnew-dl {
+  display: inline-flex;
+  margin-top: 10px;
+  text-decoration: none;
+}
+
+.whatsnew-steps {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
 /* ── CTA Button ─────────────────────────────────────────────── */
 .btn-cta {
   display: flex;
@@ -1232,6 +1281,14 @@ code {
 
   .user-chip {
     max-width: 140px;
+  }
+
+  .name-btns {
+    flex-direction: column-reverse;
+  }
+
+  .name-btns .name-save {
+    width: 100%;
   }
 
   .privacy-badge {
