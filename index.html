@@ -23,7 +23,12 @@
           <span class="brand-sub">by Mr.Robot · SOC OT</span>
         </div>
       </div>
-      <span class="header-tag">v1.0</span>
+      <div class="header-right">
+        <button class="user-chip hidden" id="user-chip" type="button" aria-label="Change your name">
+          <span aria-hidden="true">👤</span> <span id="user-chip-name"></span> · <span class="user-chip-edit">เปลี่ยน</span>
+        </button>
+        <span class="header-tag" id="app-version">v1.1.0</span>
+      </div>
     </div>
   </header>
 
@@ -122,6 +127,9 @@
             <button class="shift-btn" data-shift="Night" id="btn-shift-night" aria-pressed="false">
               <span aria-hidden="true">🌙</span> Night
             </button>
+            <button class="shift-btn" data-shift="Full" id="btn-shift-full" aria-pressed="false">
+              <span aria-hidden="true">🌓</span> Full Day
+            </button>
           </div>
         </div>
 
@@ -138,6 +146,12 @@
             </table>
           </div>
           <p class="preview-more" id="preview-more" aria-live="polite"></p>
+          <div class="date-row">
+            <label class="date-label" for="data-date">Shift date</label>
+            <input type="date" class="date-input" id="data-date" required>
+            <span class="date-hint" id="date-hint"></span>
+          </div>
+          <p class="preview-warn hidden" id="preview-warn" role="status"></p>
         </div>
 
         <!-- Transform CTA -->
@@ -209,15 +223,37 @@
   <footer class="site-footer">
     <div class="privacy-badge">
       <span class="privacy-icon" aria-hidden="true">🔒</span>
-      <span>Your file <strong>never leaves your device</strong> — all processing happens locally in your browser. Zero network uploads.</span>
+      <span>Your file <strong>never leaves your device</strong> — all processing happens locally in your browser. Only usage stats (your name, time, filename, row count) are logged.</span>
     </div>
     <div class="copyright">
       Developed by <strong>Mr.Robot</strong> · PTT Digital · OT SOC · 2026
     </div>
   </footer>
 
-  <!-- SheetJS CE — Excel read/write in browser -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+  <!-- ── Name dialog (asked once, before first export) ─────── -->
+  <dialog class="name-dialog" id="name-dialog" aria-labelledby="name-dialog-title">
+    <form method="dialog" class="name-form" id="name-form">
+      <h2 class="name-title" id="name-dialog-title">ใส่ชื่อของคุณ</h2>
+      <p class="name-sub">ถามครั้งเดียว — เว็บจะจำไว้ในเครื่องนี้</p>
+      <input type="text" class="name-input" id="name-input" maxlength="100"
+             autocomplete="name" placeholder="เช่น Somchai" required>
+      <p class="name-notice">
+        ระบบบันทึก <strong>ชื่อ, เวลา, ชื่อไฟล์ และจำนวนแถว</strong> เพื่อดูสถิติการใช้งาน —
+        <strong>ไม่เก็บเนื้อหา alert</strong> และไฟล์ของคุณไม่ถูกส่งออกจากเครื่อง
+      </p>
+      <div class="name-btns">
+        <button type="button" class="btn-ghost" id="name-cancel">ยกเลิก</button>
+        <button type="submit" class="btn-cta name-save" id="name-save">บันทึก</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- SheetJS CE 0.20.3 (patched) parses the untrusted upload; xlsx-js-style
+       (SheetJS 0.18.5 fork, unmaintained) only writes our own styled output. -->
+  <script src="lib/xlsx-read.full.min.js"></script>
+  <script src="lib/xlsx-read-alias.js"></script>
+  <script src="lib/xlsx-style.bundle.js"></script>
+  <script src="audit.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

@@ -157,6 +157,50 @@ code {
   letter-spacing: 0.5px;
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 220px;
+  padding: 4px 12px;
+  font-family: var(--font);
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid var(--card-border);
+  border-radius: 100px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.user-chip #user-chip-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-primary);
+}
+
+.user-chip-edit {
+  color: var(--accent-light);
+}
+
+.user-chip:hover {
+  border-color: var(--accent-mid);
+}
+
+.user-chip:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
 /* ── Main ───────────────────────────────────────────────────── */
 .site-main {
   padding: 48px 20px 60px;
@@ -446,6 +490,13 @@ code {
   box-shadow: 0 0 12px rgba(96, 165, 250, 0.15);
 }
 
+.shift-btn.active[data-shift="Full"] {
+  background: var(--accent-subtle);
+  border-color: var(--accent-mid);
+  color: var(--accent-light);
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
 /* ── Preview Panel ──────────────────────────────────────────── */
 .preview-panel {
   margin-top: 28px;
@@ -534,6 +585,127 @@ code {
   margin-top: 10px;
   text-align: center;
   font-style: italic;
+}
+
+/* Native picker is opened via .click() from the drop zone */
+#file-input {
+  display: none;
+}
+
+/* ── Shift Date + Range Warning ─────────────────────────────── */
+.date-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-top: 16px;
+}
+
+.date-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.date-input {
+  padding: 7px 10px;
+  font-family: var(--font);
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--surface);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  color-scheme: dark;
+}
+
+.date-input:focus-visible {
+  outline: none;
+  border-color: var(--accent-mid);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+.date-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.preview-warn {
+  margin-top: 12px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--day-accent);
+  background: var(--day-bg);
+  border: 1px solid var(--day-border);
+  border-radius: var(--radius-sm);
+}
+
+/* ── Name Dialog ────────────────────────────────────────────── */
+.name-dialog {
+  margin: auto;
+  width: min(420px, calc(100vw - 32px));
+  padding: 28px;
+  color: var(--text-primary);
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--shadow);
+}
+
+.name-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.name-title {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.name-sub {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.name-input {
+  width: 100%;
+  margin-top: 18px;
+  padding: 11px 14px;
+  font-family: var(--font);
+  font-size: 15px;
+  color: var(--text-primary);
+  background: var(--surface);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm);
+}
+
+.name-input:focus-visible {
+  outline: none;
+  border-color: var(--accent-mid);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+.name-notice {
+  margin-top: 14px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.name-btns {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.name-btns .name-save {
+  width: auto;
+  margin-top: 0;
+  padding: 10px 22px;
+  font-size: 14px;
 }
 
 /* ── CTA Button ─────────────────────────────────────────────── */
@@ -1048,6 +1220,18 @@ code {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
+  }
+
+  .shift-btns {
+    flex-wrap: wrap;
+  }
+
+  .shift-btn {
+    padding: 9px 16px;
+  }
+
+  .user-chip {
+    max-width: 140px;
   }
 
   .privacy-badge {

@@ -103,3 +103,36 @@ input[type="date"] {
 .status.ok  { background: rgba(22, 163, 74, .12); }
 .status.bad { background: rgba(220, 38, 38, .12); }
 .status.busy { background: rgba(233, 113, 50, .14); }
+
+.hidden { display: none !important; }
+
+.status-row { flex-wrap: wrap; }
+.chip-user {
+  border: 0;
+  color: inherit;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chip-user:hover { background: var(--muted-2); }
+
+input[type="text"] {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 13px;
+  border: 1px solid var(--muted-2);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+}
+.name-notice {
+  display: block;
+  margin-top: 5px;
+  font-size: 11px;
+  line-height: 1.4;
+  opacity: .7;
+}

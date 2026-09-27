@@ -1,7 +1,8 @@
 /**
  * Nozomi Summary — app.js
  * Transform Nozomi Vantage .xlsx alert export → formatted Excel summary
- * All processing is local — zero network uploads.
+ * All processing is local — the file never leaves the browser.
+ * Only usage metadata (name, time, filename, row count) is logged via audit.js.
  */
 
 'use strict';
@@ -31,16 +32,29 @@ const SHIFT_HEADER_COLOR = { Day: 'E97132', Night: '17375E' };
 // Alternating stripe colour per shift
 const SHIFT_STRIPE_COLOR = { Day: 'FFF2E8', Night: 'EBF0F8' };
 
+const APP_VERSION = '1.1.0';
+
+// Shift windows in Thailand time (UTC+7), same rule as extension/src/shifts.js:
+// Day of D = 08:00 D → 20:00 D, Night of D = 20:00 D → 08:00 D+1,
+// Full of D = 08:00 D → 08:00 D+1. A shift is labelled by its START date.
+const TZ_OFFSET_MS = 7 * 3600 * 1000;
+const HOUR_MS      = 3600 * 1000;
+const SHIFT_WINDOW = { Day: [8, 12], Night: [20, 12], Full: [8, 24] }; // [startHour, lengthHours]
+
 // ============================================================
 // State
 // ============================================================
 
 let selectedShift  = 'Day';
 let fileBuffer     = null;   // ArrayBuffer of the uploaded file
+let inputFilename  = '';     // name of the uploaded file (for audit log)
 let rawHeaders     = null;   // string[] — column names from input sheet
 let rawRows        = null;   // any[][] — data rows from input sheet
+let rowTimes       = null;   // (number|null)[] — epoch ms of each row's 'time'
 let outputBlob     = null;   // Blob for download
 let outputFilename = '';     // e.g. Nozomi_Summary_2026-04-23_Day.xlsx
+let outputMeta     = null;   // { shift, dataDate, rowCount } for audit log
+let exportLogged   = false;  // log only the first download of each output
 
 // ============================================================
 // DOM References
@@ -57,6 +71,19 @@ const elBtnRemoveFile  = document.getElementById('btn-remove-file');
 
 const elShiftBtnDay    = document.getElementById('btn-shift-day');
 const elShiftBtnNight  = document.getElementById('btn-shift-night');
+const elShiftBtnFull   = document.getElementById('btn-shift-full');
+const elShiftBtns      = [elShiftBtnDay, elShiftBtnNight, elShiftBtnFull];
+
+const elDataDate       = document.getElementById('data-date');
+const elDateHint       = document.getElementById('date-hint');
+const elPreviewWarn    = document.getElementById('preview-warn');
+
+const elUserChip       = document.getElementById('user-chip');
+const elUserChipName   = document.getElementById('user-chip-name');
+const elNameDialog     = document.getElementById('name-dialog');
+const elNameForm       = document.getElementById('name-form');
+const elNameInput      = document.getElementById('name-input');
+const elNameCancel     = document.getElementById('name-cancel');
 
 const elPreviewPanel   = document.getElementById('preview-panel');
 const elPreviewStats   = document.getElementById('preview-stats');
@@ -84,9 +111,12 @@ const elBtnTryAnother  = document.getElementById('btn-try-another');
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', () => {
+  Audit.configure({ source: 'web', appVersion: APP_VERSION });
   setupDropZone();
   setupShiftToggle();
+  setupDateInput();
   setupButtons();
+  setupUserName();
 });
 
 // ============================================================
@@ -161,15 +191,75 @@ function setupDropZone() {
 // ============================================================
 
 function setupShiftToggle() {
-  [elShiftBtnDay, elShiftBtnNight].forEach((btn) => {
+  elShiftBtns.forEach((btn) => {
     btn.addEventListener('click', () => {
       selectedShift = btn.dataset.shift;
-      elShiftBtnDay.classList.toggle('active', selectedShift === 'Day');
-      elShiftBtnNight.classList.toggle('active', selectedShift === 'Night');
-      elShiftBtnDay.setAttribute('aria-pressed', selectedShift === 'Day');
-      elShiftBtnNight.setAttribute('aria-pressed', selectedShift === 'Night');
+      elShiftBtns.forEach((b) => {
+        b.classList.toggle('active', b === btn);
+        b.setAttribute('aria-pressed', b === btn);
+      });
+      // Shift changes which date the alerts belong to — re-detect it.
+      if (rawRows) {
+        detectShiftDate();
+        updateRangeWarning();
+      }
     });
   });
+}
+
+// ============================================================
+// Shift Date (auto-detected, user-editable)
+// ============================================================
+
+function setupDateInput() {
+  elDataDate.addEventListener('change', () => {
+    elDateHint.textContent = 'Edited manually';
+    updateRangeWarning();
+  });
+}
+
+/**
+ * Fill the date input with the shift date most rows belong to (ties → earlier
+ * date), so a few stray alerts from a neighbouring shift don't shift it.
+ */
+function detectShiftDate() {
+  const counts = new Map();
+  rowTimes.forEach((t) => {
+    if (t === null) return;
+    const d = shiftDateOf(t, selectedShift);
+    counts.set(d, (counts.get(d) || 0) + 1);
+  });
+  if (counts.size === 0) {
+    elDataDate.value = toISODateStr(new Date(Date.now() + TZ_OFFSET_MS));
+    elDateHint.textContent = 'Could not read alert times — please check';
+    return;
+  }
+  const [best] = [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  elDataDate.value = best[0];
+  elDateHint.textContent = 'Auto-detected from alert times · edit if wrong';
+}
+
+/** Warn about rows whose time falls outside the selected shift window. */
+function updateRangeWarning() {
+  const dateStr = elDataDate.value;
+  if (!rawRows || !isValidDateStr(dateStr)) {
+    elPreviewWarn.classList.add('hidden');
+    return;
+  }
+  const [startMs, endMs] = shiftWindow(dateStr, selectedShift);
+  const outside = rowTimes.filter((t) => t === null || t < startMs || t >= endMs).length;
+  if (outside === 0) {
+    elPreviewWarn.classList.add('hidden');
+    return;
+  }
+  const label = selectedShift === 'Full' ? 'the full day' : `the ${selectedShift} shift`;
+  const range = `${formatIctTime(startMs)} – ${formatIctTime(endMs)} (ICT)`;
+  const rows  = outside === 1 ? '1 row falls' : `${outside} rows fall`;
+  elPreviewWarn.textContent = selectedShift === 'Full'
+    ? `⚠️ ${rows} outside ${label} ${range} and will be dropped.`
+    : `⚠️ ${rows} outside ${label} ${range}. Still included — check the shift and date.`;
+  elPreviewWarn.classList.remove('hidden');
 }
 
 // ============================================================
@@ -178,10 +268,61 @@ function setupShiftToggle() {
 
 function setupButtons() {
   elBtnRemoveFile.addEventListener('click', resetUploadState);
-  elBtnTransform.addEventListener('click', startTransform);
+  elBtnTransform.addEventListener('click', () => withUserName(startTransform));
   elBtnDownload.addEventListener('click', downloadOutput);
   elBtnAnother.addEventListener('click', resetAll);
   elBtnTryAnother.addEventListener('click', resetAll);
+}
+
+// ============================================================
+// User Name (asked once before the first export, kept in localStorage)
+// ============================================================
+
+let pendingAfterName = null;
+
+function setupUserName() {
+  renderUserChip();
+
+  elUserChip.addEventListener('click', () => openNameDialog(null));
+
+  elNameForm.addEventListener('submit', (e) => {
+    const name = elNameInput.value.trim();
+    if (!name) {
+      e.preventDefault();
+      return;
+    }
+    Audit.setUser(name);
+    renderUserChip();
+    const next = pendingAfterName;
+    pendingAfterName = null;
+    if (next) setTimeout(next, 0); // after the dialog has closed
+  });
+
+  elNameCancel.addEventListener('click', () => {
+    pendingAfterName = null;
+    elNameDialog.close();
+  });
+
+  elNameDialog.addEventListener('cancel', () => { pendingAfterName = null; });
+}
+
+function renderUserChip() {
+  const name = Audit.getUser();
+  elUserChipName.textContent = name;
+  elUserChip.classList.toggle('hidden', !name);
+}
+
+function openNameDialog(next) {
+  pendingAfterName = next;
+  elNameInput.value = Audit.getUser();
+  elNameDialog.showModal();
+  elNameInput.focus();
+}
+
+/** Run fn now if we know the user's name, otherwise ask first. */
+function withUserName(fn) {
+  if (Audit.getUser()) fn();
+  else openNameDialog(fn);
 }
 
 // ============================================================
@@ -189,6 +330,9 @@ function setupButtons() {
 // ============================================================
 
 function handleFile(file) {
+  inputFilename    = file.name;
+  elDataDate.value = ''; // don't report the previous file's date in errors
+
   // Validate extension
   if (!file.name.toLowerCase().endsWith('.xlsx')) {
     showError('Please upload an .xlsx file. This tool only accepts Excel .xlsx format.');
@@ -217,7 +361,8 @@ function handleFile(file) {
 function parseAndPreview(fileName, fileSize) {
   try {
     const data = new Uint8Array(fileBuffer);
-    const wb = XLSX.read(data, { type: 'array', cellDates: true, raw: false });
+    // Parse with the patched reader (see index.html), not the style bundle.
+    const wb = XLSX_READ.read(data, { type: 'array', cellDates: true, raw: false });
 
     // Validate sheet exists
     if (!wb.SheetNames.includes('Vantage export')) {
@@ -230,7 +375,7 @@ function parseAndPreview(fileName, fileSize) {
     }
 
     const ws = wb.Sheets['Vantage export'];
-    const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null });
+    const aoa = XLSX_READ.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null });
 
     if (aoa.length < 2) {
       showError('No alert records found in the file. The sheet appears to be empty.');
@@ -258,6 +403,8 @@ function parseAndPreview(fileName, fileSize) {
 
     rawHeaders = headers;
     rawRows    = rows;
+    const timeIdx = headers.indexOf('time');
+    rowTimes   = rows.map((r) => parseTimeMs(r[timeIdx]));
 
     // Show file-selected state
     elSelName.textContent = fileName;
@@ -284,15 +431,9 @@ function parseAndPreview(fileName, fileSize) {
 // ============================================================
 
 function buildPreview(headers, rows) {
-  // Detect date from 'time' column
-  const timeIdx = headers.indexOf('time');
-  let dateLabel = '';
-  if (timeIdx >= 0 && rows.length > 0) {
-    const d = extractDate(rows[0][timeIdx]);
-    if (d) dateLabel = `· Date: ${formatDate(d)}`;
-  }
-
-  elPreviewStats.textContent = `${rows.length} record${rows.length !== 1 ? 's' : ''} found ${dateLabel}`;
+  elPreviewStats.textContent = `${rows.length} record${rows.length !== 1 ? 's' : ''} found`;
+  detectShiftDate();
+  updateRangeWarning();
 
   // Build header row (preview columns only)
   const previewCols = PREVIEW_COLS.filter((c) => headers.includes(c));
@@ -335,6 +476,13 @@ function buildPreview(headers, rows) {
 async function startTransform() {
   if (!rawHeaders || !rawRows || rawRows.length === 0) return;
 
+  const dateStr = elDataDate.value;
+  if (!isValidDateStr(dateStr)) {
+    elDataDate.focus();
+    elDateHint.textContent = 'Please pick a valid date';
+    return;
+  }
+
   const rowCount = rawRows.length;
 
   // Switch to processing state
@@ -346,11 +494,13 @@ async function startTransform() {
   await rafDelay();
 
   try {
-    const result = buildOutputWorkbook(rawHeaders, rawRows, selectedShift);
+    const result = buildOutputWorkbook(rawHeaders, rawRows, rowTimes, selectedShift, dateStr);
     outputBlob     = new Blob([result.buffer], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     });
     outputFilename = result.filename;
+    outputMeta     = { shift: selectedShift, dataDate: dateStr, rowCount: result.rowCount };
+    exportLogged   = false;
 
     // Clear source data from memory
     clearSourceData();
@@ -369,54 +519,67 @@ async function startTransform() {
 // Build Output Workbook (SheetJS)
 // ============================================================
 
-function buildOutputWorkbook(headers, rows, shift) {
-  // ── Detect date ──────────────────────────────────────────
-  const timeIdx = headers.indexOf('time');
-  let dateStr    = toISODateStr(new Date());
-  let dayOfMonth = new Date().getUTCDate();
-
-  if (timeIdx >= 0 && rows.length > 0) {
-    const d = extractDate(rows[0][timeIdx]);
-    if (d) {
-      dateStr    = toISODateStr(d);
-      dayOfMonth = d.getUTCDate();
-    }
-  }
-
-  const sheetName = `Alert_${dayOfMonth}`;
-  const filename  = `Nozomi_Summary_${dateStr}_${shift}.xlsx`;
-
-  // ── Build AoA ────────────────────────────────────────────
-  // Row 0 (A1): shift label in column A, rest blank
-  const labelRow = KEEP_COLUMNS.map((_, i) => (i === 0 ? shift : null));
-
-  // Row 1: column headers
-  const headerRow = [...KEEP_COLUMNS];
-
-  // Rows 2+: data
-  const dataRows = rows.map((row) =>
+/**
+ * Day/Night: one block with every row (original behaviour).
+ * Full: a Day block then a Night block, split by alert time; rows outside
+ * the 24h window are dropped. Same layout as the extension's buildFullDay.
+ */
+function buildOutputWorkbook(headers, rows, times, shift, dateStr) {
+  const toOutputRow = (row) =>
     KEEP_COLUMNS.map((col) => {
       const idx = headers.indexOf(col);
       if (idx < 0) return null;
       return cleanValue(row[idx]);
-    })
-  );
+    });
 
-  const aoa = [labelRow, headerRow, ...dataRows];
+  let blocks;
+  let rowCount;
+  if (shift === 'Full') {
+    const pick = (s) => {
+      const [startMs, endMs] = shiftWindow(dateStr, s);
+      return rows.filter((_, i) => times[i] !== null && times[i] >= startMs && times[i] < endMs);
+    };
+    const dayRows   = pick('Day');
+    const nightRows = pick('Night');
+    blocks   = [
+      { shift: 'Day',   rows: dayRows.map(toOutputRow) },
+      { shift: 'Night', rows: nightRows.map(toOutputRow) },
+    ];
+    rowCount = `${dayRows.length + nightRows.length} (D ${dayRows.length} / N ${nightRows.length})`;
+  } else {
+    blocks   = [{ shift, rows: rows.map(toOutputRow) }];
+    rowCount = rows.length;
+  }
+
+  const dayOfMonth = parseInt(dateStr.slice(8, 10), 10);
+  const sheetName  = `Alert_${dayOfMonth}`;
+  const filename   = `Nozomi_Summary_${dateStr}_${shift === 'Full' ? 'Day-Night' : shift}.xlsx`;
+
+  // ── Build AoA ────────────────────────────────────────────
+  // Per block: shift label in column A, column headers, data rows;
+  // a blank spacer row between blocks.
+  const layout = []; // { kind, shift, values, dataIndex }
+  blocks.forEach((block, bi) => {
+    layout.push({ kind: 'label', shift: block.shift,
+      values: KEEP_COLUMNS.map((_, i) => (i === 0 ? block.shift : null)) });
+    layout.push({ kind: 'header', shift: block.shift, values: [...KEEP_COLUMNS] });
+    block.rows.forEach((values, i) =>
+      layout.push({ kind: 'data', shift: block.shift, dataIndex: i, values }));
+    if (bi < blocks.length - 1) {
+      layout.push({ kind: 'spacer', shift: block.shift, values: KEEP_COLUMNS.map(() => null) });
+    }
+  });
 
   // ── Create worksheet ─────────────────────────────────────
-  const ws = XLSX.utils.aoa_to_sheet(aoa, { cellDates: true });
+  const ws = XLSX.utils.aoa_to_sheet(layout.map((l) => l.values), { cellDates: true });
 
   // Column widths
   ws['!cols'] = COLUMN_WIDTHS;
 
   // ── Apply cell styles ────────────────────────────────────
-  const headerFill = SHIFT_HEADER_COLOR[shift];
-  const stripeFill = SHIFT_STRIPE_COLOR[shift];
-  const nCols      = KEEP_COLUMNS.length;
-  const nRows      = aoa.length;
+  const nCols = KEEP_COLUMNS.length;
 
-  for (let r = 0; r < nRows; r++) {
+  for (let r = 0; r < layout.length; r++) {
     for (let c = 0; c < nCols; c++) {
       const addr = XLSX.utils.encode_cell({ r, c });
 
@@ -425,7 +588,7 @@ function buildOutputWorkbook(headers, rows, shift) {
         ws[addr] = { v: null, t: 'z' };
       }
 
-      ws[addr].s = buildCellStyle(r, c, headerFill, stripeFill, headerFill);
+      ws[addr].s = buildCellStyle(layout[r], c);
     }
   }
 
@@ -435,28 +598,31 @@ function buildOutputWorkbook(headers, rows, shift) {
 
   const buffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
 
-  return { buffer, filename };
+  return { buffer, filename, rowCount };
 }
 
 /**
- * Return a SheetJS style object for the given row/col position.
- * r=0 → label row, r=1 → header, r≥2 → data
+ * Return a SheetJS style object for one cell of a layout row
+ * (label → header → data rows, striped from the first data row).
  */
-function buildCellStyle(r, c, headerFill, stripeFill, borderColor) {
+function buildCellStyle(row, c) {
+  const headerFill = SHIFT_HEADER_COLOR[row.shift];
   const border = {
-    top:    { style: 'thin', color: { rgb: borderColor } },
-    bottom: { style: 'thin', color: { rgb: borderColor } },
-    left:   { style: 'thin', color: { rgb: borderColor } },
-    right:  { style: 'thin', color: { rgb: borderColor } },
+    top:    { style: 'thin', color: { rgb: headerFill } },
+    bottom: { style: 'thin', color: { rgb: headerFill } },
+    left:   { style: 'thin', color: { rgb: headerFill } },
+    right:  { style: 'thin', color: { rgb: headerFill } },
   };
 
-  if (r === 0) {
+  if (row.kind === 'spacer') return {};
+
+  if (row.kind === 'label') {
     return c === 0
       ? { font: { name: 'Calibri', sz: 11, bold: false } }
       : {};
   }
 
-  if (r === 1) {
+  if (row.kind === 'header') {
     return {
       fill: { patternType: 'solid', fgColor: { rgb: headerFill } },
       font: { name: 'Calibri', sz: 11, bold: true, color: { rgb: 'FFFFFF' } },
@@ -465,10 +631,10 @@ function buildCellStyle(r, c, headerFill, stripeFill, borderColor) {
     };
   }
 
-  const isStripe = (r % 2 === 0);
+  const isStripe = (row.dataIndex % 2 === 0);
   const style = { font: { name: 'Calibri', sz: 11 }, border };
   if (isStripe) {
-    style.fill = { patternType: 'solid', fgColor: { rgb: stripeFill } };
+    style.fill = { patternType: 'solid', fgColor: { rgb: SHIFT_STRIPE_COLOR[row.shift] } };
   }
   return style;
 }
@@ -492,17 +658,31 @@ function downloadOutput() {
   setTimeout(() => {
     URL.revokeObjectURL(url);
   }, 2000);
+
+  if (!exportLogged && outputMeta) {
+    exportLogged = true;
+    Audit.log({
+      event:           'export',
+      output_filename: outputFilename,
+      shift:           outputMeta.shift,
+      data_date:       outputMeta.dataDate,
+      row_count:       outputMeta.rowCount,
+      input_filename:  inputFilename,
+    });
+  }
 }
 
 function clearSourceData() {
   fileBuffer  = null;
   rawHeaders  = null;
   rawRows     = null;
+  rowTimes    = null;
 }
 
 function clearOutputData() {
   outputBlob     = null;
   outputFilename = '';
+  outputMeta     = null;
 }
 
 // ============================================================
@@ -521,6 +701,14 @@ function showSection(section) {
 function showError(message) {
   elErrMsg.textContent = message;
   showSection(elSecError);
+
+  Audit.log({
+    event:          'export_error',
+    shift:          selectedShift,
+    data_date:      isValidDateStr(elDataDate.value) ? elDataDate.value : '',
+    input_filename: inputFilename,
+    error_message:  message,
+  });
 }
 
 function setDropZoneSelected(isSelected) {
@@ -551,6 +739,9 @@ function resetUploadState() {
   elPrevTbody.innerHTML = '';
   elPreviewStats.textContent = '';
   elPreviewMore.textContent  = '';
+  elPreviewWarn.classList.add('hidden');
+  elDataDate.value = '';
+  elDateHint.textContent = '';
 }
 
 function resetAll() {
@@ -566,31 +757,63 @@ function resetAll() {
 // ============================================================
 
 /**
- * Attempt to extract a Date from a Nozomi time cell value.
+ * Parse a Nozomi time cell value to epoch ms (UTC).
  * Handles: string "2026-04-23 12:29:54 +0000", JS Date, Excel serial number.
  */
-function extractDate(val) {
-  if (!val) return null;
+function parseTimeMs(val) {
+  if (val === null || val === undefined || val === '') return null;
 
   if (val instanceof Date) {
-    return isNaN(val.getTime()) ? null : val;
+    return isNaN(val.getTime()) ? null : val.getTime();
   }
 
   if (typeof val === 'string') {
-    // Match leading "YYYY-MM-DD"
-    const m = val.match(/^(\d{4}-\d{2}-\d{2})/);
-    if (m) {
-      return new Date(m[1] + 'T00:00:00Z');
+    const m = val.trim().match(
+      /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})(?:\.\d+)?\s*(Z|[+-]\d{2}:?\d{2})?$/
+    );
+    if (!m) return null;
+    const [, y, mo, d, h, mi, sec, tz] = m;
+    let ms = Date.UTC(+y, +mo - 1, +d, +h, +mi, +sec);
+    if (tz && tz !== 'Z') {
+      const sign = tz[0] === '-' ? -1 : 1;
+      const digits = tz.replace(':', '');
+      ms -= sign * (parseInt(digits.slice(1, 3), 10) * 60 + parseInt(digits.slice(3, 5), 10)) * 60000;
     }
+    return ms;
   }
 
   if (typeof val === 'number' && isFinite(val)) {
     // Excel serial date (days since 1900-01-01, with Lotus-1-2-3 leap year bug)
-    const d = new Date(Math.round((val - 25569) * 86400 * 1000));
-    return isNaN(d.getTime()) ? null : d;
+    return Math.round((val - 25569) * 86400 * 1000);
   }
 
   return null;
+}
+
+/**
+ * [startMs, endMs) of a shift on Thailand date dateStr ('YYYY-MM-DD').
+ */
+function shiftWindow(dateStr, shift) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const [startHour, hours] = SHIFT_WINDOW[shift];
+  const startMs = Date.UTC(y, m - 1, d, startHour) - TZ_OFFSET_MS;
+  return [startMs, startMs + hours * HOUR_MS];
+}
+
+/**
+ * The shift date an alert at epoch ms belongs to. Night and Full shifts
+ * run past midnight, so 00:00–07:59 ICT belongs to the previous day's shift.
+ */
+function shiftDateOf(ms, shift) {
+  const ict = new Date(ms + TZ_OFFSET_MS); // read with UTC getters = ICT wall clock
+  if (shift !== 'Day' && ict.getUTCHours() < 8) {
+    ict.setUTCDate(ict.getUTCDate() - 1);
+  }
+  return toISODateStr(ict);
+}
+
+function isValidDateStr(s) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(Date.parse(s));
 }
 
 /**
@@ -604,10 +827,13 @@ function toISODateStr(d) {
 }
 
 /**
- * Format a Date as human-readable "2026-04-23" (same as toISODateStr but kept separate for display).
+ * Format epoch ms as "YYYY-MM-DD HH:MM" in Thailand time.
  */
-function formatDate(d) {
-  return toISODateStr(d);
+function formatIctTime(ms) {
+  const d = new Date(ms + TZ_OFFSET_MS);
+  const hh = String(d.getUTCHours()).padStart(2, '0');
+  const mi = String(d.getUTCMinutes()).padStart(2, '0');
+  return `${toISODateStr(d)} ${hh}:${mi}`;
 }
 
 /**

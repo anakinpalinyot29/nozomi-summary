@@ -5,3 +5,6 @@ Thumbs.db
 # Editor
 .vscode/
 *.swp
+
+# Local test files
+.test-tmp/

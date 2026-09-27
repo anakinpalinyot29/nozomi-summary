@@ -180,19 +180,31 @@ async function download(blob, filename) {
 async function runExport() {
   const btn = $('btn-export');
   const dateStr = $('date-input').value;
+  const shift = selectedShift;
+
+  // Show the error and record it in the usage log.
+  const fail = (msg) => {
+    setStatus(msg, 'bad');
+    Audit.log({ event: 'export_error', shift, data_date: dateStr, error_message: msg });
+  };
+
+  if (!ensureUserName()) {
+    setStatus('👤 กรุณาใส่ชื่อก่อน export (ถามครั้งเดียว)', 'bad');
+    return;
+  }
 
   if (!window.Shifts.isValidDate(dateStr)) {
-    setStatus('❌ กรุณาเลือกวันที่ให้ถูกต้อง', 'bad');
+    fail('❌ กรุณาเลือกวันที่ให้ถูกต้อง');
     return;
   }
 
   const { tab, onVantage, org } = await getState();
   if (!onVantage) {
-    setStatus('❌ แท็บที่โฟกัสไม่ใช่ Vantage\nเปิดแท็บ Vantage (ล็อกอินแล้ว) ให้ active แล้วลองใหม่', 'bad');
+    fail('❌ แท็บที่โฟกัสไม่ใช่ Vantage\nเปิดแท็บ Vantage (ล็อกอินแล้ว) ให้ active แล้วลองใหม่');
     return;
   }
   if (!org) {
-    setStatus('⚠️ ยังไม่ได้ vantage-org — refresh หน้า /alerts ของ Vantage หนึ่งครั้งแล้วลองใหม่', 'bad');
+    fail('⚠️ ยังไม่ได้ vantage-org — refresh หน้า /alerts ของ Vantage หนึ่งครั้งแล้วลองใหม่');
     return;
   }
 
@@ -204,11 +216,11 @@ async function runExport() {
 
       setStatus('⏳ ดึงกะ Day…', 'busy');
       const dayRes = await fetchWindow(tab.id, org, dGe, dLt);
-      if (!dayRes.ok) { setStatus(explainError(dayRes), 'bad'); return; }
+      if (!dayRes.ok) { fail(explainError(dayRes)); return; }
 
       setStatus(`⏳ Day: ${dayRes.records.length} · ดึงกะ Night…`, 'busy');
       const nightRes = await fetchWindow(tab.id, org, nGe, nLt);
-      if (!nightRes.ok) { setStatus(explainError(nightRes), 'bad'); return; }
+      if (!nightRes.ok) { fail(explainError(nightRes)); return; }
 
       const { blob, filename } = window.Normalize.buildFullDay(
         dayRes.records, nightRes.records, dateStr
@@ -218,23 +230,70 @@ async function runExport() {
         `✅ เสร็จ — Day ${dayRes.records.length} + Night ${nightRes.records.length} records\n📄 ${filename}`,
         'ok'
       );
+      const d = dayRes.records.length, n = nightRes.records.length;
+      Audit.log({
+        event: 'export', output_filename: filename, shift, data_date: dateStr,
+        row_count: `${d + n} (D ${d} / N ${n})`,
+      });
     } else {
       const [geMs, ltMs] = window.Shifts.shiftWindow(dateStr, selectedShift);
       setStatus(`⏳ ดึงกะ ${selectedShift}…`, 'busy');
       const res = await fetchWindow(tab.id, org, geMs, ltMs);
-      if (!res.ok) { setStatus(explainError(res), 'bad'); return; }
+      if (!res.ok) { fail(explainError(res)); return; }
 
       const { blob, filename } = window.Normalize.buildSingle(
         res.records, selectedShift, dateStr
       );
       await download(blob, filename);
       setStatus(`✅ เสร็จ — ${res.records.length} records\n📄 ${filename}`, 'ok');
+      Audit.log({
+        event: 'export', output_filename: filename, shift, data_date: dateStr,
+        row_count: res.records.length,
+      });
     }
   } catch (e) {
-    setStatus('❌ error: ' + (e && e.message ? e.message : String(e)), 'bad');
+    fail('❌ error: ' + (e && e.message ? e.message : String(e)));
   } finally {
     btn.disabled = false;
   }
+}
+
+// ── User name (asked once, kept in the popup's localStorage) ────
+
+/** Save a typed name if there is one; false means we still need a name. */
+function ensureUserName() {
+  const typed = $('name-input').value.trim();
+  if (typed) {
+    Audit.setUser(typed);
+    renderUserName();
+  }
+  if (Audit.getUser()) return true;
+  $('name-field').classList.remove('hidden');
+  $('name-input').focus();
+  return false;
+}
+
+function renderUserName() {
+  const name = Audit.getUser();
+  $('chip-user-name').textContent = name;
+  $('chip-user').classList.toggle('hidden', !name);
+  $('name-field').classList.toggle('hidden', !!name);
+  $('name-input').value = '';
+}
+
+function setupUserName() {
+  renderUserName();
+  $('chip-user').addEventListener('click', () => {
+    $('name-input').value = Audit.getUser();
+    $('name-field').classList.remove('hidden');
+    $('name-input').focus();
+  });
+  $('name-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && $('name-input').value.trim()) {
+      Audit.setUser($('name-input').value);
+      renderUserName();
+    }
+  });
 }
 
 // ── Wire up ─────────────────────────────────────────────────────
@@ -255,7 +314,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const p = (n) => String(n).padStart(2, '0');
   $('date-input').value = `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}`;
 
+  Audit.configure({ source: 'extension', appVersion: chrome.runtime.getManifest().version });
   setupShiftButtons();
+  setupUserName();
   $('btn-export').addEventListener('click', runExport);
   getState();
 });

@@ -17,7 +17,14 @@
     <div class="status-row">
       <span class="chip" id="chip-tab">tab: —</span>
       <span class="chip" id="chip-org">org: —</span>
+      <button class="chip chip-user hidden" id="chip-user" type="button" title="เปลี่ยนชื่อ">👤 <span id="chip-user-name"></span></button>
     </div>
+
+    <label class="field name-field hidden" id="name-field">
+      <span class="field-label">ชื่อของคุณ (ถามครั้งเดียว)</span>
+      <input type="text" id="name-input" maxlength="100" placeholder="เช่น Somchai" autocomplete="name">
+      <span class="name-notice">ระบบบันทึกชื่อ, เวลา, ชื่อไฟล์ และจำนวนแถว เพื่อดูสถิติการใช้งาน — ไม่เก็บเนื้อหา alert</span>
+    </label>
 
     <label class="field">
       <span class="field-label">วันที่ (เริ่มกะ)</span>
@@ -43,6 +50,7 @@
   <script src="lib/xlsx.bundle.js"></script>
   <script src="src/shifts.js"></script>
   <script src="src/normalize.js"></script>
+  <script src="src/audit.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

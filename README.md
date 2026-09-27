@@ -15,7 +15,8 @@ Takes a raw Nozomi Vantage export (54 columns, `Vantage export` sheet) and outpu
 - **Alternating striped rows** for readability
 - **Calibri 11pt** throughout
 - **Sheet name** `Alert_<day>` (e.g. `Alert_23` for the 23rd)
-- **Output filename** `Nozomi_Summary_YYYY-MM-DD_<Shift>.xlsx`
+- **Output filename** `Nozomi_Summary_YYYY-MM-DD_<Shift>.xlsx` (`_Day-Night.xlsx` for Full Day)
+- **Full Day mode**: one 24h export is split into a Day block and a Night block on the same sheet
 
 ---
 
@@ -23,10 +24,19 @@ Takes a raw Nozomi Vantage export (54 columns, `Vantage export` sheet) and outpu
 
 1. **Open the app** — either at the hosted URL or by opening `index.html` directly in your browser
 2. **Drop your Nozomi export** — drag and drop the `export_alert_*.xlsx` file onto the drop zone, or click to browse
-3. **Select the shift** — click **Day** or **Night** (☀️ / 🌙)
+3. **Select the shift** — click **Day**, **Night** or **Full Day** (☀️ / 🌙 / 🌓)
 4. **Check the preview** — the app shows the first 5 rows of key columns so you can verify it's the right file
-5. **Click "Transform & Download"** — the formatted Excel file downloads automatically
-6. **Transform Another** — click the button to start over for the next shift
+5. **Check the shift date** — auto-detected from alert times (Thailand time, UTC+7); edit it if wrong. A warning shows how many rows fall outside the shift window
+6. **Click "Transform & Download"** — the first time, you'll be asked for your name (remembered on this device)
+7. **Transform Another** — click the button to start over for the next shift
+
+### Shift windows (Thailand time)
+
+| Shift | Window | Labelled as |
+|---|---|---|
+| Day | 08:00 D → 20:00 D | D |
+| Night | 20:00 D → 08:00 D+1 | D |
+| Full Day | 08:00 D → 08:00 D+1 | D (rows outside are dropped) |
 
 ### Supported Input Format
 
@@ -46,8 +56,23 @@ Takes a raw Nozomi Vantage export (54 columns, `Vantage export` sheet) and outpu
 - The file is read using the browser's `FileReader` API — no upload occurs
 - All processing runs in browser memory (JavaScript)
 - After the download triggers, the source buffer is set to `null` so the garbage collector reclaims it
-- There are **zero network requests** to any server during transform
-- No cookies, no localStorage, no analytics
+- The file and its alert content are **never sent** anywhere
+
+### Usage log
+
+To see who uses the tool, each export sends **metadata only** to a Google Sheet
+(via Apps Script — see [`apps-script/SETUP.md`](apps-script/SETUP.md)):
+
+| Logged | Not logged |
+|---|---|
+| Name you typed, time, web/extension, app version | Any alert content (IPs, descriptions, …) |
+| Output + input filename, shift, date, row count | The file itself |
+| Error message (if the export failed) | |
+| Random device ID, browser user-agent | |
+
+- Your name, device ID and any unsent log entries are kept in `localStorage`
+- Logging is fire-and-forget: it never blocks or breaks a download; failed sends retry on next visit
+- The Content-Security-Policy (`vercel.json`) only allows network requests to `script.google.com`
 
 ---
 
@@ -89,7 +114,9 @@ Every `git push` to `main` automatically redeploys.
 | Markup | HTML5 (semantic, accessible) |
 | Style | Vanilla CSS (custom properties, dark theme, CSS animations) |
 | Logic | Vanilla JavaScript ES2020 (no frameworks, no build tools) |
-| Excel engine | [SheetJS CE](https://sheetjs.com/) via CDN (`xlsx@0.18.5`) |
+| Excel read | [SheetJS CE](https://sheetjs.com/) `0.20.3`, self-hosted in `lib/` (patched for CVE-2023-30533 / CVE-2024-22363) |
+| Excel write | [xlsx-js-style](https://github.com/gitbrent/xlsx-js-style) `1.2.0`, self-hosted in `lib/` (styles; only writes our own output) |
+| Usage log | Google Apps Script → Google Sheets |
 | Font | [Inter](https://fonts.google.com/specimen/Inter) via Google Fonts |
 | Hosting | [Vercel](https://vercel.com) (static site, auto-deploy) |
 
@@ -102,6 +129,11 @@ nozomi-summary/
 ├── index.html   — Single-page app (all UI states)
 ├── style.css    — Dark theme, animations, responsive layout
 ├── app.js       — Transform engine + FileReader + SheetJS integration
+├── audit.js     — Usage log client (copied to extension/src/audit.js)
+├── lib/         — Self-hosted SheetJS builds
+├── vercel.json  — Security headers (CSP etc.)
+├── apps-script/ — Usage log receiver (Code.gs) + setup guide
+├── extension/   — Nozomi SOAR Robot browser extension
 └── README.md    — This file
 ```
 
