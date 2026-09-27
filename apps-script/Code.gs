@@ -56,8 +56,53 @@ function doPost(e) {
   return reply({ ok: true });
 }
 
-function doGet() {
+function doGet(e) {
+  const action = e && e.parameter ? e.parameter.action : '';
+  if (action === 'logs') return reply(readLogs());
   return reply({ ok: true, service: 'nozomi-summary-audit' });
+}
+
+// ── Public read (Audit page on the web app) ─────────────────────
+
+// Anyone can read these, so identifying columns are never returned.
+const PUBLIC_COLUMNS = [
+  'server_time', 'user', 'source', 'event', 'output_filename', 'shift',
+  'data_date', 'row_count', 'input_filename', 'error_message', 'app_version',
+];
+const READ_DAYS     = 90;
+const READ_MAX_ROWS = 2000;
+
+/** Newest-first log rows from the last READ_DAYS days, at most READ_MAX_ROWS. */
+function readLogs() {
+  const sh   = getLogSheet();
+  const last = sh.getLastRow();
+  if (last < 2) return { ok: true, rows: [] };
+
+  // Rows are appended in time order, so the newest are at the bottom.
+  const first  = Math.max(2, last - READ_MAX_ROWS + 1);
+  const values = sh.getRange(first, 1, last - first + 1, COLUMNS.length).getValues();
+  const cutoff = Date.now() - READ_DAYS * 24 * 3600 * 1000;
+  const idx    = PUBLIC_COLUMNS.map((c) => COLUMNS.indexOf(c));
+
+  const rows = [];
+  for (let i = values.length - 1; i >= 0; i--) {
+    const t = values[i][0];
+    if (!(t instanceof Date)) continue;
+    if (t.getTime() < cutoff) break;
+    const row = {};
+    PUBLIC_COLUMNS.forEach((col, j) => {
+      const v = values[i][idx[j]];
+      // Sheets auto-converts "2026-04-23" in data_date to a Date — keep it a plain date.
+      const fmt = col === 'data_date' ? 'yyyy-MM-dd' : 'yyyy-MM-dd HH:mm:ss';
+      row[col] = v instanceof Date ? Utilities.formatDate(v, TIMEZONE, fmt) : v;
+    });
+    rows.push(row);
+  }
+  return {
+    ok: true,
+    generated_at: Utilities.formatDate(new Date(), TIMEZONE, 'yyyy-MM-dd HH:mm:ss'),
+    rows,
+  };
 }
 
 // ── One-time setup (run manually from the editor) ───────────────

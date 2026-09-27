@@ -13,259 +13,339 @@
 </head>
 <body>
 
-  <!-- ── Header ─────────────────────────────────────────────── -->
-  <header class="site-header">
-    <div class="header-inner">
+  <!-- ── Icon sprite (Lucide, ISC licence) ───────────────────── -->
+  <svg class="sprite" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="i-sheet" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 13h2"/><path d="M14 13h2"/><path d="M8 17h2"/><path d="M14 17h2"/></symbol>
+    <symbol id="i-plug" viewBox="0 0 24 24"><path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+    <symbol id="i-contrast" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 18a6 6 0 0 0 0-12v12z"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+    <symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+    <symbol id="i-table" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M12 3v18"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+  </svg>
+
+  <div class="app">
+
+    <!-- ── Sidebar ───────────────────────────────────────────── -->
+    <aside class="sidebar">
       <div class="brand">
-        <img class="brand-icon" src="icon.ico" alt="Mr.Robot" aria-hidden="true">
+        <img class="brand-icon" src="icon.ico" alt="" aria-hidden="true">
         <div class="brand-text">
           <span class="brand-name">Nozomi Summary</span>
           <span class="brand-sub">by Mr.Robot · SOC OT</span>
         </div>
       </div>
-      <div class="header-right">
-        <button class="user-chip hidden" id="user-chip" type="button" aria-label="Change your name">
-          <span aria-hidden="true">👤</span> <span id="user-chip-name"></span> · <span class="user-chip-edit">เปลี่ยน</span>
-        </button>
-        <span class="header-tag" id="app-version">v1.1.0</span>
+
+      <nav class="nav" aria-label="Main">
+        <a class="nav-link" href="#transform" data-view="transform">
+          <svg class="i"><use href="#i-sheet"/></svg><span>Transform</span>
+        </a>
+        <a class="nav-link" href="#extension" data-view="extension">
+          <svg class="i"><use href="#i-plug"/></svg><span>Extension</span>
+        </a>
+        <a class="nav-link" href="#audit" data-view="audit">
+          <svg class="i"><use href="#i-chart"/></svg><span>Audit</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-foot">
+        <p class="privacy-note">
+          <svg class="i"><use href="#i-lock"/></svg>
+          <span>ไฟล์ไม่ออกจากเครื่อง — ประมวลผลในเบราว์เซอร์ทั้งหมด เก็บแค่สถิติการใช้งาน</span>
+        </p>
+        <p class="copyright">Mr.Robot · PTT Digital · OT SOC · 2026</p>
       </div>
-    </div>
-  </header>
+    </aside>
 
-  <!-- ── Main ───────────────────────────────────────────────── -->
-  <main class="site-main">
-    <div class="hero-text">
-      <h1>Transform Nozomi Alert Export</h1>
-      <p>Drop your Vantage <code>.xlsx</code> export and get a clean, formatted Excel summary — instantly, in your browser.</p>
-    </div>
-
-    <!-- ── Auto Extension (install) ─────────────────────────── -->
-    <section class="app-card install-card">
-      <span class="install-badge">✨ ใหม่ · แนะนำ</span>
-      <div class="install-head">
-        <img class="install-icon" src="icon.ico" alt="Mr.Robot">
-        <div>
-          <h2 class="install-title">ตัวช่วยอัตโนมัติ (Browser Extension)</h2>
-          <p class="install-sub">ดึง alert ของกะจาก Vantage มา normalize ให้อัตโนมัติ — ไม่ต้อง export เอง</p>
+    <!-- ── Main ──────────────────────────────────────────────── -->
+    <div class="main">
+      <header class="topbar">
+        <h1 class="page-title" id="page-title">Transform</h1>
+        <div class="topbar-right">
+          <button class="user-chip hidden" id="user-chip" type="button" aria-label="Change your name">
+            <svg class="i"><use href="#i-user"/></svg>
+            <span id="user-chip-name"></span>
+            <span class="user-chip-edit">เปลี่ยน</span>
+          </button>
+          <span class="version-tag" id="app-version">v1.2.0</span>
         </div>
-      </div>
-
-      <ul class="feat-list">
-        <li><span aria-hidden="true">⚡</span> เลือกกะ + วันที่ แล้วกดปุ่มเดียว ได้ไฟล์ Excel</li>
-        <li><span aria-hidden="true">🔐</span> ใช้ session ที่คุณล็อกอิน Vantage อยู่แล้ว — ไม่ต้อง 2FA ซ้ำ</li>
-        <li><span aria-hidden="true">📅</span> เลือกได้ทั้ง Day, Night หรือทั้งวัน (รวมในไฟล์เดียว)</li>
-        <li><span aria-hidden="true">🖥️</span> ใช้ได้ทั้ง Chrome และ Edge</li>
-      </ul>
-
-      <a class="btn-cta" href="nozomi-soar-robot-extension.zip" download>
-        <span class="btn-cta-icon" aria-hidden="true">⬇</span>
-        <span class="btn-cta-text">ดาวน์โหลด Extension (.zip)</span>
-      </a>
-
-      <details class="install-steps">
-        <summary>วิธีติดตั้ง (ทำครั้งเดียว)</summary>
-        <ol>
-          <li>แตกไฟล์ <code>.zip</code> ที่ดาวน์โหลดมา</li>
-          <li>เปิด <code>chrome://extensions</code> (หรือ <code>edge://extensions</code>)</li>
-          <li>เปิด <strong>Developer mode</strong> (มุมขวาบน)</li>
-          <li>กด <strong>Load unpacked</strong> → เลือกโฟลเดอร์ที่แตกไว้</li>
-          <li>เปิดแท็บ Vantage แล้วล็อกอิน → คลิกไอคอน extension → เลือกกะ+วันที่ → Export</li>
-        </ol>
-      </details>
-    </section>
-
-    <div class="or-divider"><span>หรืออัปโหลดไฟล์เอง (manual)</span></div>
-
-    <div class="app-card" id="app-card">
+      </header>
 
       <!-- ══════════════════════════════════════════════════════
-           SECTION: UPLOAD / PREVIEW
+           VIEW: TRANSFORM
            ══════════════════════════════════════════════════════ -->
-      <section class="app-section active" id="sec-upload">
+      <section class="view view-transform" id="view-transform" data-view="transform">
 
-        <!-- Drop Zone -->
-        <div class="drop-zone" id="drop-zone" role="button" tabindex="0" aria-label="Drop zone — click or drag a .xlsx file here">
-          <input type="file" id="file-input" accept=".xlsx" aria-hidden="true">
+        <!-- Left: controls -->
+        <div class="panel controls">
 
-          <!-- Idle content -->
-          <div class="dz-idle" id="dz-idle">
-            <div class="dz-illustration" aria-hidden="true">
-              <span class="dz-icon-main">📊</span>
-              <span class="dz-sparkle s1">✦</span>
-              <span class="dz-sparkle s2">✦</span>
-              <span class="dz-sparkle s3">✦</span>
+          <div class="alert alert-error hidden" id="err-box" role="alert">
+            <svg class="i"><use href="#i-alert"/></svg>
+            <div class="alert-body">
+              <p class="alert-title">Something went wrong</p>
+              <p class="alert-msg" id="err-msg"></p>
             </div>
-            <p class="dz-title">Drop your Nozomi export here</p>
-            <p class="dz-sub">or <span class="dz-browse-link">click to browse files</span></p>
-            <p class="dz-hint">Supports: <strong>.xlsx</strong> only</p>
+            <button class="icon-btn" id="err-close" type="button" aria-label="Dismiss error">
+              <svg class="i"><use href="#i-x"/></svg>
+            </button>
           </div>
 
-          <!-- Selected content (hidden until file picked) -->
-          <div class="dz-selected hidden" id="dz-selected" aria-live="polite">
-            <span class="dz-sel-check" aria-hidden="true">✅</span>
-            <div class="dz-sel-info">
-              <p class="dz-sel-name" id="sel-name">filename.xlsx</p>
-              <p class="dz-sel-size" id="sel-size">—</p>
+          <div class="drop-zone" id="drop-zone" role="button" tabindex="0" aria-label="Drop zone — click or drag a .xlsx file here">
+            <input type="file" id="file-input" accept=".xlsx" aria-hidden="true" tabindex="-1">
+
+            <div class="dz-idle" id="dz-idle">
+              <span class="dz-icon"><svg class="i"><use href="#i-upload"/></svg></span>
+              <p class="dz-title">Drop Vantage export here</p>
+              <p class="dz-sub">or <span class="dz-link">browse</span> · <strong>.xlsx</strong> only</p>
+            </div>
+
+            <div class="dz-selected hidden" id="dz-selected" aria-live="polite">
+              <span class="dz-file-icon"><svg class="i"><use href="#i-sheet"/></svg></span>
+              <div class="dz-sel-info">
+                <p class="dz-sel-name" id="sel-name">filename.xlsx</p>
+                <p class="dz-sel-size"><span id="sel-size">—</span> · ลากไฟล์ใหม่มาวางเพื่อเปลี่ยน</p>
+              </div>
+              <button class="icon-btn" id="btn-remove-file" type="button" aria-label="Remove selected file">
+                <svg class="i"><use href="#i-x"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <fieldset class="field-group" id="controls">
+            <div class="field">
+              <span class="field-label" id="shift-label">Shift</span>
+              <div class="segmented" role="group" aria-labelledby="shift-label">
+                <button class="seg-btn active" data-shift="Day" id="btn-shift-day" type="button" aria-pressed="true">
+                  <svg class="i"><use href="#i-sun"/></svg> Day
+                </button>
+                <button class="seg-btn" data-shift="Night" id="btn-shift-night" type="button" aria-pressed="false">
+                  <svg class="i"><use href="#i-moon"/></svg> Night
+                </button>
+                <button class="seg-btn" data-shift="Full" id="btn-shift-full" type="button" aria-pressed="false">
+                  <svg class="i"><use href="#i-contrast"/></svg> Full Day
+                </button>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="data-date">Shift date</label>
+              <input type="date" class="input" id="data-date" required>
+              <span class="field-hint" id="date-hint">เลือกไฟล์ก่อน — ระบบจะหาวันที่ให้อัตโนมัติ</span>
+            </div>
+
+            <p class="alert alert-warn hidden" id="preview-warn" role="status"></p>
+          </fieldset>
+
+          <div class="controls-foot">
+            <button class="btn btn-primary btn-lg" id="btn-transform" type="button" disabled>
+              <span class="spinner hidden" id="transform-spinner" aria-hidden="true"></span>
+              <svg class="i" id="transform-icon"><use href="#i-zap"/></svg>
+              <span id="transform-label">Transform &amp; Download</span>
+            </button>
+
+            <div class="done-box hidden" id="done-box" aria-live="polite">
+              <div class="done-head">
+                <span class="done-check"><svg class="i"><use href="#i-check"/></svg></span>
+                <div>
+                  <p class="done-title">ดาวน์โหลดแล้ว</p>
+                  <p class="done-fname" id="done-fname">Nozomi_Summary_....xlsx</p>
+                </div>
+              </div>
+              <div class="done-btns">
+                <button class="btn btn-secondary" id="btn-download" type="button">
+                  <svg class="i"><use href="#i-download"/></svg> ดาวน์โหลดอีกครั้ง
+                </button>
+                <button class="btn btn-primary" id="btn-another" type="button">
+                  <svg class="i"><use href="#i-upload"/></svg> ไฟล์ถัดไป
+                </button>
+              </div>
+              <p class="done-note">ไฟล์ต้นฉบับถูกล้างออกจากหน่วยความจำแล้ว</p>
             </div>
           </div>
         </div>
 
-        <!-- Remove file button -->
-        <div class="file-action-row hidden" id="file-action-row">
-          <button class="btn-remove-file" id="btn-remove-file" aria-label="Remove selected file">
-            ✕ Remove file
-          </button>
-        </div>
-
-        <!-- Shift Selector -->
-        <div class="shift-row" role="group" aria-label="Shift selection">
-          <span class="shift-label-text">Shift</span>
-          <div class="shift-btns">
-            <button class="shift-btn active" data-shift="Day" id="btn-shift-day" aria-pressed="true">
-              <span aria-hidden="true">☀️</span> Day
-            </button>
-            <button class="shift-btn" data-shift="Night" id="btn-shift-night" aria-pressed="false">
-              <span aria-hidden="true">🌙</span> Night
-            </button>
-            <button class="shift-btn" data-shift="Full" id="btn-shift-full" aria-pressed="false">
-              <span aria-hidden="true">🌓</span> Full Day
-            </button>
+        <!-- Right: preview -->
+        <div class="panel preview">
+          <div class="panel-head">
+            <h2 class="panel-title"><svg class="i"><use href="#i-table"/></svg> Preview</h2>
+            <span class="badge hidden" id="preview-stats" aria-live="polite"></span>
           </div>
-        </div>
 
-        <!-- Preview Panel (shown after file parsed) -->
-        <div class="preview-panel hidden" id="preview-panel">
-          <div class="preview-bar">
-            <span class="preview-label">📋 Preview</span>
-            <span class="preview-stats" id="preview-stats" aria-live="polite"></span>
+          <div class="preview-empty" id="preview-empty">
+            <p class="empty-title">ยังไม่มีไฟล์</p>
+            <p class="empty-sub">วางไฟล์ export จาก Vantage ทางซ้าย แล้วตัวอย่างข้อมูลจะแสดงที่นี่</p>
+            <table class="ref-tbl" aria-label="Shift windows (Thailand time)">
+              <thead><tr><th>Shift</th><th>ช่วงเวลา (ICT)</th></tr></thead>
+              <tbody>
+                <tr><td><span class="dot dot-day"></span>Day</td><td>08:00 D → 20:00 D</td></tr>
+                <tr><td><span class="dot dot-night"></span>Night</td><td>20:00 D → 08:00 D+1</td></tr>
+                <tr><td><span class="dot dot-full"></span>Full Day</td><td>08:00 D → 08:00 D+1</td></tr>
+              </tbody>
+            </table>
           </div>
-          <div class="tbl-scroll" role="region" aria-label="Data preview table" tabindex="0">
-            <table class="prev-tbl" id="prev-tbl">
+
+          <div class="tbl-scroll hidden" id="preview-scroll" role="region" aria-label="Data preview table" tabindex="0">
+            <table class="data-tbl" id="prev-tbl">
               <thead><tr id="prev-thead"></tr></thead>
               <tbody id="prev-tbody"></tbody>
             </table>
           </div>
           <p class="preview-more" id="preview-more" aria-live="polite"></p>
-          <div class="date-row">
-            <label class="date-label" for="data-date">Shift date</label>
-            <input type="date" class="date-input" id="data-date" required>
-            <span class="date-hint" id="date-hint"></span>
-          </div>
-          <p class="preview-warn hidden" id="preview-warn" role="status"></p>
-        </div>
-
-        <!-- Transform CTA -->
-        <button class="btn-cta hidden" id="btn-transform" aria-label="Transform and download Excel file">
-          <span class="btn-cta-icon" aria-hidden="true">⚡</span>
-          <span class="btn-cta-text">Transform &amp; Download</span>
-        </button>
-
-      </section>
-
-      <!-- ══════════════════════════════════════════════════════
-           SECTION: PROCESSING
-           ══════════════════════════════════════════════════════ -->
-      <section class="app-section hidden" id="sec-processing" aria-live="assertive">
-        <div class="state-body">
-          <div class="proc-spinner" aria-hidden="true">
-            <span class="proc-icon">⚡</span>
-            <span class="proc-ring"></span>
-          </div>
-          <p class="proc-title">Transforming...</p>
-          <p class="proc-detail" id="proc-detail">Preparing your data...</p>
-          <div class="prog-track" role="progressbar" aria-label="Processing progress">
-            <div class="prog-fill" id="prog-fill"></div>
-          </div>
         </div>
       </section>
 
       <!-- ══════════════════════════════════════════════════════
-           SECTION: DONE
+           VIEW: EXTENSION
            ══════════════════════════════════════════════════════ -->
-      <section class="app-section hidden" id="sec-done" aria-live="assertive">
-        <div class="state-body">
-          <div class="done-badge" aria-hidden="true">
-            <span class="done-check">✅</span>
-            <span class="done-ring"></span>
+      <section class="view view-extension hidden" id="view-extension" data-view="extension">
+        <div class="panel">
+          <span class="badge badge-accent">แนะนำ</span>
+          <div class="ext-head">
+            <img class="ext-icon" src="icon.ico" alt="">
+            <div>
+              <h2 class="ext-title">ตัวช่วยอัตโนมัติ (Browser Extension)</h2>
+              <p class="ext-sub">ดึง alert ของกะจาก Vantage มา normalize ให้อัตโนมัติ — ไม่ต้อง export เอง</p>
+            </div>
           </div>
-          <h2 class="done-title">Done! Your summary is ready.</h2>
-          <div class="done-file-card">
-            <span class="done-file-icon" aria-hidden="true">📄</span>
-            <span class="done-file-name" id="done-fname">Nozomi_Summary_....xlsx</span>
-          </div>
-          <div class="done-btns">
-            <button class="btn-cta done-cta" id="btn-download">
-              <span aria-hidden="true">⬇</span>
-              <span>Download</span>
-            </button>
-            <button class="btn-ghost" id="btn-another">🔄 Transform Another</button>
-          </div>
-          <p class="mem-cleared" aria-live="polite">🗑️ Source file cleared from memory</p>
+          <ul class="feat-list">
+            <li><svg class="i"><use href="#i-zap"/></svg> เลือกกะ + วันที่ แล้วกดปุ่มเดียว ได้ไฟล์ Excel</li>
+            <li><svg class="i"><use href="#i-lock"/></svg> ใช้ session ที่คุณล็อกอิน Vantage อยู่แล้ว — ไม่ต้อง 2FA ซ้ำ</li>
+            <li><svg class="i"><use href="#i-contrast"/></svg> เลือกได้ทั้ง Day, Night หรือทั้งวัน (รวมในไฟล์เดียว)</li>
+            <li><svg class="i"><use href="#i-check"/></svg> ใช้ได้ทั้ง Chrome และ Edge</li>
+          </ul>
+          <a class="btn btn-primary btn-lg" href="nozomi-soar-robot-extension.zip" download>
+            <svg class="i"><use href="#i-download"/></svg> ดาวน์โหลด Extension (.zip)
+          </a>
+        </div>
+
+        <div class="panel">
+          <h2 class="panel-title">วิธีติดตั้ง (ทำครั้งเดียว)</h2>
+          <ol class="steps">
+            <li>แตกไฟล์ <code>.zip</code> ที่ดาวน์โหลดมา</li>
+            <li>เปิด <code>chrome://extensions</code> (หรือ <code>edge://extensions</code>)</li>
+            <li>เปิด <strong>Developer mode</strong> (มุมขวาบน)</li>
+            <li>กด <strong>Load unpacked</strong> → เลือกโฟลเดอร์ที่แตกไว้</li>
+            <li>เปิดแท็บ Vantage แล้วล็อกอิน → คลิกไอคอน extension → เลือกกะ+วันที่ → Export</li>
+          </ol>
+          <p class="muted">อัปเดตเวอร์ชัน: แตกไฟล์ทับโฟลเดอร์เดิม แล้วกด <svg class="i i-inline"><use href="#i-refresh"/></svg> ที่ <code>chrome://extensions</code></p>
         </div>
       </section>
 
       <!-- ══════════════════════════════════════════════════════
-           SECTION: ERROR
+           VIEW: AUDIT
            ══════════════════════════════════════════════════════ -->
-      <section class="app-section hidden" id="sec-error" aria-live="assertive">
-        <div class="state-body">
-          <div class="err-icon" aria-hidden="true">❌</div>
-          <p class="err-heading">Something went wrong</p>
-          <p class="err-msg" id="err-msg">An unexpected error occurred.</p>
-          <button class="btn-ghost" id="btn-try-another">Try Another File</button>
+      <section class="view view-audit hidden" id="view-audit" data-view="audit">
+        <div class="audit-bar">
+          <p class="muted" id="audit-status" aria-live="polite">ข้อมูลย้อนหลัง 90 วัน</p>
+          <button class="btn btn-secondary" id="audit-refresh" type="button">
+            <svg class="i"><use href="#i-refresh"/></svg> Refresh
+          </button>
+        </div>
+
+        <div class="kpis" id="audit-kpis">
+          <div class="kpi"><p class="kpi-label">Exports วันนี้</p><p class="kpi-value" id="kpi-today">—</p></div>
+          <div class="kpi"><p class="kpi-label">Exports 7 วัน</p><p class="kpi-value" id="kpi-week">—</p></div>
+          <div class="kpi"><p class="kpi-label">ผู้ใช้ 7 วัน</p><p class="kpi-value" id="kpi-users">—</p></div>
+          <div class="kpi"><p class="kpi-label">Errors 7 วัน</p><p class="kpi-value" id="kpi-errors">—</p></div>
+          <div class="kpi"><p class="kpi-label">Web / Extension (7 วัน)</p><p class="kpi-value" id="kpi-source">—</p></div>
+        </div>
+
+        <div class="audit-grid">
+          <div class="panel audit-users">
+            <div class="panel-head">
+              <h2 class="panel-title"><svg class="i"><use href="#i-user"/></svg> รายคน</h2>
+            </div>
+            <div class="tbl-scroll">
+              <table class="data-tbl">
+                <thead><tr><th>User</th><th class="num">Exports</th><th class="num">Errors</th><th>ล่าสุด</th></tr></thead>
+                <tbody id="audit-users"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel audit-log">
+            <div class="panel-head">
+              <h2 class="panel-title"><svg class="i"><use href="#i-clock"/></svg> Log</h2>
+              <div class="filters">
+                <label class="search">
+                  <svg class="i"><use href="#i-search"/></svg>
+                  <input type="search" class="input" id="f-search" placeholder="ค้นหาชื่อ / ไฟล์" aria-label="Search user or file">
+                </label>
+                <select class="input" id="f-range" aria-label="Date range">
+                  <option value="1">วันนี้</option>
+                  <option value="7">7 วัน</option>
+                  <option value="30" selected>30 วัน</option>
+                  <option value="90">90 วัน</option>
+                </select>
+                <select class="input" id="f-event" aria-label="Event">
+                  <option value="">ทุก event</option>
+                  <option value="export">export</option>
+                  <option value="export_error">export_error</option>
+                </select>
+                <select class="input" id="f-source" aria-label="Source">
+                  <option value="">ทุก source</option>
+                  <option value="web">web</option>
+                  <option value="extension">extension</option>
+                </select>
+              </div>
+            </div>
+            <div class="tbl-scroll">
+              <table class="data-tbl">
+                <thead><tr>
+                  <th>เวลา</th><th>User</th><th>Event</th><th>Source</th>
+                  <th>Shift</th><th>Date</th><th class="num">Rows</th><th>File / Error</th>
+                </tr></thead>
+                <tbody id="audit-log"></tbody>
+              </table>
+            </div>
+            <p class="preview-more" id="audit-count"></p>
+          </div>
         </div>
       </section>
-
-    </div><!-- /.app-card -->
-  </main>
-
-  <!-- ── Footer ─────────────────────────────────────────────── -->
-  <footer class="site-footer">
-    <div class="privacy-badge">
-      <span class="privacy-icon" aria-hidden="true">🔒</span>
-      <span>Your file <strong>never leaves your device</strong> — all processing happens locally in your browser. Only usage stats (your name, time, filename, row count) are logged.</span>
     </div>
-    <div class="copyright">
-      Developed by <strong>Mr.Robot</strong> · PTT Digital · OT SOC · 2026
-    </div>
-  </footer>
+  </div>
 
   <!-- ── Name dialog (asked once, before first export) ─────── -->
-  <dialog class="name-dialog" id="name-dialog" aria-labelledby="name-dialog-title">
-    <form method="dialog" class="name-form" id="name-form">
-      <h2 class="name-title" id="name-dialog-title">ใส่ชื่อของคุณ</h2>
-      <p class="name-sub">ถามครั้งเดียว — เว็บจะจำไว้ในเครื่องนี้</p>
-      <input type="text" class="name-input" id="name-input" maxlength="100"
+  <dialog class="dialog" id="name-dialog" aria-labelledby="name-dialog-title">
+    <form method="dialog" class="dialog-form" id="name-form">
+      <h2 class="dialog-title" id="name-dialog-title">ใส่ชื่อของคุณ</h2>
+      <p class="dialog-sub">ถามครั้งเดียว — เว็บจะจำไว้ในเครื่องนี้</p>
+      <input type="text" class="input" id="name-input" maxlength="100"
              autocomplete="name" placeholder="เช่น Somchai" required>
-      <p class="name-notice">
-        ระบบบันทึก <strong>ชื่อ, เวลา, ชื่อไฟล์ และจำนวนแถว</strong> เพื่อดูสถิติการใช้งาน —
+      <p class="dialog-notice">
+        ระบบบันทึก <strong>ชื่อ, เวลา, ชื่อไฟล์ และจำนวนแถว</strong> เพื่อดูสถิติการใช้งาน (ทุกคนดูได้ที่หน้า Audit) —
         <strong>ไม่เก็บเนื้อหา alert</strong> และไฟล์ของคุณไม่ถูกส่งออกจากเครื่อง
       </p>
-      <div class="name-btns">
-        <button type="button" class="btn-ghost" id="name-cancel">ยกเลิก</button>
-        <button type="submit" class="btn-cta name-save" id="name-save">บันทึก</button>
+      <div class="dialog-btns">
+        <button type="button" class="btn btn-secondary" id="name-cancel">ยกเลิก</button>
+        <button type="submit" class="btn btn-primary" id="name-save">บันทึก</button>
       </div>
     </form>
   </dialog>
 
   <!-- ── What's new (shown on load until "read" for this version) ── -->
-  <dialog class="name-dialog whatsnew-dialog" id="whatsnew-dialog" aria-labelledby="whatsnew-title">
-    <h2 class="name-title" id="whatsnew-title">🎉 มีอะไรใหม่ใน v1.1.0</h2>
+  <dialog class="dialog" id="whatsnew-dialog" aria-labelledby="whatsnew-title">
+    <h2 class="dialog-title" id="whatsnew-title">มีอะไรใหม่ใน v1.2.0</h2>
     <ul class="whatsnew-list">
-      <li><span aria-hidden="true">🌓</span><span><strong>โหมด Full Day</strong> — อัปไฟล์ 24 ชม. ไฟล์เดียว แยก Day/Night ให้เอง</span></li>
-      <li><span aria-hidden="true">📅</span><span><strong>แก้บั๊กวันที่กะ Night</strong> — คำนวณตามเวลาไทย แก้วันที่เองได้</span></li>
-      <li><span aria-hidden="true">⚠️</span><span>เตือนเมื่อมีแถวอยู่นอกช่วงเวลากะ</span></li>
-      <li><span aria-hidden="true">👤</span><span>ครั้งแรกที่ export จะถามชื่อ เพื่อเก็บสถิติการใช้งาน
-        <small>(ไม่เก็บเนื้อหา alert — ไฟล์ไม่ออกจากเครื่อง)</small></span></li>
+      <li><svg class="i"><use href="#i-table"/></svg><span><strong>หน้าตาใหม่ ไม่ต้องเลื่อน</strong> — เมนูด้านซ้าย ตั้งค่ากับ preview อยู่ในจอเดียว</span></li>
+      <li><svg class="i"><use href="#i-zap"/></svg><span><strong>กดครั้งเดียวได้ไฟล์</strong> — Transform แล้วดาวน์โหลดทันที ลากไฟล์ถัดไปมาวางต่อได้เลย</span></li>
+      <li><svg class="i"><use href="#i-chart"/></svg><span><strong>หน้า Audit</strong> — ดูสถิติการใช้งานจาก Sheet ได้บนเว็บ</span></li>
     </ul>
-    <div class="whatsnew-ext">
-      <p><span aria-hidden="true">🤖</span> <strong>ใช้ Extension อยู่?</strong> ต้องอัปเดตเป็น 1.1.0</p>
-      <a class="btn-ghost whatsnew-dl" href="nozomi-soar-robot-extension.zip" download>⬇ ดาวน์โหลด Extension</a>
-      <p class="whatsnew-steps">แตกไฟล์ทับโฟลเดอร์เดิม → กด 🔄 ที่ <code>chrome://extensions</code></p>
-    </div>
-    <div class="name-btns">
-      <button type="button" class="btn-ghost" id="whatsnew-later">ปิดไว้ก่อน</button>
-      <button type="button" class="btn-cta name-save" id="whatsnew-read">อ่านประกาศนี้แล้ว</button>
+    <p class="dialog-notice">Extension ยังเป็น v1.1.0 เหมือนเดิม — ไม่ต้องอัปเดต</p>
+    <div class="dialog-btns">
+      <button type="button" class="btn btn-secondary" id="whatsnew-later">ปิดไว้ก่อน</button>
+      <button type="button" class="btn btn-primary" id="whatsnew-read">อ่านประกาศนี้แล้ว</button>
     </div>
   </dialog>
 
@@ -276,5 +356,6 @@
   <script src="lib/xlsx-style.bundle.js"></script>
   <script src="audit.js"></script>
   <script src="app.js"></script>
+  <script src="audit-view.js"></script>
 </body>
 </html>

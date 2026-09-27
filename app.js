@@ -25,14 +25,14 @@ const COLUMN_WIDTHS = [
 
 // Preview: show the first N columns (truncated for readability)
 const PREVIEW_COLS   = ['id', 'time', 'name', 'ip_src', 'ip_dst', 'risk', 'site:name'];
-const PREVIEW_ROWS   = 5;
+const PREVIEW_ROWS   = 100; // scrolls inside the preview panel
 
 // Shift → Excel header background colour (RRGGBB, no #)
 const SHIFT_HEADER_COLOR = { Day: 'E97132', Night: '17375E' };
 // Alternating stripe colour per shift
 const SHIFT_STRIPE_COLOR = { Day: 'FFF2E8', Night: 'EBF0F8' };
 
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.2.0';
 
 // Shift windows in Thailand time (UTC+7), same rule as extension/src/shifts.js:
 // Day of D = 08:00 D → 20:00 D, Night of D = 20:00 D → 08:00 D+1,
@@ -66,7 +66,6 @@ const elDzIdle         = document.getElementById('dz-idle');
 const elDzSelected     = document.getElementById('dz-selected');
 const elSelName        = document.getElementById('sel-name');
 const elSelSize        = document.getElementById('sel-size');
-const elFileActionRow  = document.getElementById('file-action-row');
 const elBtnRemoveFile  = document.getElementById('btn-remove-file');
 
 const elShiftBtnDay    = document.getElementById('btn-shift-day');
@@ -74,6 +73,7 @@ const elShiftBtnNight  = document.getElementById('btn-shift-night');
 const elShiftBtnFull   = document.getElementById('btn-shift-full');
 const elShiftBtns      = [elShiftBtnDay, elShiftBtnNight, elShiftBtnFull];
 
+const elControls       = document.getElementById('controls');
 const elDataDate       = document.getElementById('data-date');
 const elDateHint       = document.getElementById('date-hint');
 const elPreviewWarn    = document.getElementById('preview-warn');
@@ -89,26 +89,30 @@ const elWhatsNew       = document.getElementById('whatsnew-dialog');
 const elWhatsNewLater  = document.getElementById('whatsnew-later');
 const elWhatsNewRead   = document.getElementById('whatsnew-read');
 
-const elPreviewPanel   = document.getElementById('preview-panel');
+const elPreviewEmpty   = document.getElementById('preview-empty');
+const elPreviewScroll  = document.getElementById('preview-scroll');
 const elPreviewStats   = document.getElementById('preview-stats');
 const elPrevThead      = document.getElementById('prev-thead');
 const elPrevTbody      = document.getElementById('prev-tbody');
 const elPreviewMore    = document.getElementById('preview-more');
 
 const elBtnTransform   = document.getElementById('btn-transform');
+const elTransformLabel = document.getElementById('transform-label');
+const elTransformIcon  = document.getElementById('transform-icon');
+const elTransformSpin  = document.getElementById('transform-spinner');
 
-const elSecUpload      = document.getElementById('sec-upload');
-const elSecProcessing  = document.getElementById('sec-processing');
-const elSecDone        = document.getElementById('sec-done');
-const elSecError       = document.getElementById('sec-error');
-
-const elProcDetail     = document.getElementById('proc-detail');
+const elDoneBox        = document.getElementById('done-box');
 const elDoneFname      = document.getElementById('done-fname');
 const elBtnDownload    = document.getElementById('btn-download');
 const elBtnAnother     = document.getElementById('btn-another');
 
+const elErrBox         = document.getElementById('err-box');
 const elErrMsg         = document.getElementById('err-msg');
-const elBtnTryAnother  = document.getElementById('btn-try-another');
+const elErrClose       = document.getElementById('err-close');
+
+const elPageTitle      = document.getElementById('page-title');
+const elNavLinks       = document.querySelectorAll('.nav-link');
+const elViews          = document.querySelectorAll('.view');
 
 // ============================================================
 // Entry Point
@@ -116,6 +120,7 @@ const elBtnTryAnother  = document.getElementById('btn-try-another');
 
 document.addEventListener('DOMContentLoaded', () => {
   Audit.configure({ source: 'web', appVersion: APP_VERSION });
+  setupRouter();
   setupDropZone();
   setupShiftToggle();
   setupDateInput();
@@ -123,6 +128,31 @@ document.addEventListener('DOMContentLoaded', () => {
   setupUserName();
   setupWhatsNew();
 });
+
+// ============================================================
+// Router (#transform / #extension / #audit)
+// ============================================================
+
+const VIEW_TITLES = { transform: 'Transform', extension: 'Extension', audit: 'Audit' };
+
+function setupRouter() {
+  window.addEventListener('hashchange', showCurrentView);
+  showCurrentView();
+}
+
+function showCurrentView() {
+  const name = location.hash.slice(1);
+  const view = VIEW_TITLES[name] ? name : 'transform';
+  elViews.forEach((v) => v.classList.toggle('hidden', v.dataset.view !== view));
+  elNavLinks.forEach((a) => {
+    const on = a.dataset.view === view;
+    a.classList.toggle('active', on);
+    if (on) a.setAttribute('aria-current', 'page');
+    else a.removeAttribute('aria-current');
+  });
+  elPageTitle.textContent = VIEW_TITLES[view];
+  document.dispatchEvent(new CustomEvent('nz:view', { detail: view }));
+}
 
 // ============================================================
 // What's New (per version; only "read" hides it — other closes
@@ -161,23 +191,16 @@ function setupWhatsNew() {
 
 function setupDropZone() {
   // Click → open file picker
-  elDropZone.addEventListener('click', (e) => {
-    if (rawHeaders) return; // already has file — ignore click on selected state
-    elFileInput.click();
+  elDropZone.addEventListener('click', () => {
+    if (!elDropZone.classList.contains('is-disabled')) elFileInput.click();
   });
 
   // Keyboard accessible
   elDropZone.addEventListener('keydown', (e) => {
-    if ((e.key === 'Enter' || e.key === ' ') && !rawHeaders) {
+    if (e.target === elDropZone && (e.key === 'Enter' || e.key === ' ')) {
       e.preventDefault();
       elFileInput.click();
     }
-  });
-
-  // Browse link inside drop zone
-  elDzIdle.querySelector('.dz-browse-link').addEventListener('click', (e) => {
-    e.stopPropagation();
-    elFileInput.click();
   });
 
   // File input change
@@ -195,13 +218,11 @@ function setupDropZone() {
   // Drop zone specific drag events
   elDropZone.addEventListener('dragenter', (e) => {
     e.preventDefault();
-    if (rawHeaders) return;
     elDropZone.classList.add('drag-over');
   });
 
   elDropZone.addEventListener('dragover', (e) => {
     e.preventDefault();
-    if (rawHeaders) return;
     elDropZone.classList.add('drag-over');
     e.dataTransfer.dropEffect = 'copy';
   });
@@ -216,7 +237,7 @@ function setupDropZone() {
   elDropZone.addEventListener('drop', (e) => {
     e.preventDefault();
     elDropZone.classList.remove('drag-over');
-    if (rawHeaders) return;
+    if (elDropZone.classList.contains('is-disabled')) return;
     const file = e.dataTransfer.files && e.dataTransfer.files[0];
     if (file) handleFile(file);
   });
@@ -293,8 +314,8 @@ function updateRangeWarning() {
   const range = `${formatIctTime(startMs)} – ${formatIctTime(endMs)} (ICT)`;
   const rows  = outside === 1 ? '1 row falls' : `${outside} rows fall`;
   elPreviewWarn.textContent = selectedShift === 'Full'
-    ? `⚠️ ${rows} outside ${label} ${range} and will be dropped.`
-    : `⚠️ ${rows} outside ${label} ${range}. Still included — check the shift and date.`;
+    ? `${rows} outside ${label} ${range} and will be dropped.`
+    : `${rows} outside ${label} ${range}. Still included — check the shift and date.`;
   elPreviewWarn.classList.remove('hidden');
 }
 
@@ -303,11 +324,17 @@ function updateRangeWarning() {
 // ============================================================
 
 function setupButtons() {
-  elBtnRemoveFile.addEventListener('click', resetUploadState);
+  elBtnRemoveFile.addEventListener('click', (e) => {
+    e.stopPropagation(); // don't open the file picker
+    resetUploadState();
+  });
   elBtnTransform.addEventListener('click', () => withUserName(startTransform));
   elBtnDownload.addEventListener('click', downloadOutput);
-  elBtnAnother.addEventListener('click', resetAll);
-  elBtnTryAnother.addEventListener('click', resetAll);
+  elBtnAnother.addEventListener('click', () => {
+    resetUploadState();
+    elFileInput.click();
+  });
+  elErrClose.addEventListener('click', hideError);
 }
 
 // ============================================================
@@ -366,8 +393,9 @@ function withUserName(fn) {
 // ============================================================
 
 function handleFile(file) {
-  inputFilename    = file.name;
-  elDataDate.value = ''; // don't report the previous file's date in errors
+  hideError();
+  resetUploadState();   // a new file replaces the previous one (or a finished export)
+  inputFilename = file.name;
 
   // Validate extension
   if (!file.name.toLowerCase().endsWith('.xlsx')) {
@@ -382,16 +410,14 @@ function handleFile(file) {
     parseAndPreview(file.name, file.size);
   };
 
-  reader.onerror = () => {
-    showError('Could not read the file. Please try again.');
-    resetUploadState();
-  };
+  reader.onerror = () => showError('Could not read the file. Please try again.');
 
   reader.readAsArrayBuffer(file);
 
-  // Show loading state in drop zone while reading
+  // Show the file in the drop zone while reading
   elSelName.textContent = file.name;
   elSelSize.textContent = formatBytes(file.size);
+  setDropZoneSelected(true);
 }
 
 function parseAndPreview(fileName, fileSize) {
@@ -450,8 +476,7 @@ function parseAndPreview(fileName, fileSize) {
     // Build preview
     buildPreview(headers, rows);
 
-    // Show transform button
-    elBtnTransform.classList.remove('hidden');
+    elBtnTransform.disabled = false;
 
   } catch (err) {
     showError(
@@ -467,7 +492,8 @@ function parseAndPreview(fileName, fileSize) {
 // ============================================================
 
 function buildPreview(headers, rows) {
-  elPreviewStats.textContent = `${rows.length} record${rows.length !== 1 ? 's' : ''} found`;
+  elPreviewStats.textContent = `${rows.length.toLocaleString()} record${rows.length !== 1 ? 's' : ''}`;
+  elPreviewStats.classList.remove('hidden');
   detectShiftDate();
   updateRangeWarning();
 
@@ -497,12 +523,15 @@ function buildPreview(headers, rows) {
   });
 
   if (rows.length > PREVIEW_ROWS) {
-    elPreviewMore.textContent = `…and ${rows.length - PREVIEW_ROWS} more row${rows.length - PREVIEW_ROWS !== 1 ? 's' : ''}`;
+    const more = rows.length - PREVIEW_ROWS;
+    elPreviewMore.textContent = `Showing first ${PREVIEW_ROWS} · ${more.toLocaleString()} more row${more !== 1 ? 's' : ''} not shown`;
   } else {
     elPreviewMore.textContent = '';
   }
 
-  elPreviewPanel.classList.remove('hidden');
+  elPreviewEmpty.classList.add('hidden');
+  elPreviewScroll.classList.remove('hidden');
+  elPreviewScroll.scrollTop = 0;
 }
 
 // ============================================================
@@ -521,9 +550,7 @@ async function startTransform() {
 
   const rowCount = rawRows.length;
 
-  // Switch to processing state
-  showSection(elSecProcessing);
-  elProcDetail.textContent = `Processing ${rowCount.toLocaleString()} row${rowCount !== 1 ? 's' : ''}…`;
+  setBusy(true, `Transforming ${rowCount.toLocaleString()} row${rowCount !== 1 ? 's' : ''}…`);
 
   // Yield to browser so processing-state renders before blocking computation
   await rafDelay();
@@ -541,12 +568,12 @@ async function startTransform() {
     // Clear source data from memory
     clearSourceData();
 
-    // Show done state
-    elDoneFname.textContent = outputFilename;
-    showSection(elSecDone);
+    setBusy(false);
+    showDone();
+    downloadOutput();
 
   } catch (err) {
-    clearSourceData();
+    setBusy(false);
     showError(err.message || 'Transform failed. Please try again.');
   }
 }
@@ -725,19 +752,26 @@ function clearOutputData() {
 // UI State Management
 // ============================================================
 
-function showSection(section) {
-  [elSecUpload, elSecProcessing, elSecDone, elSecError].forEach((s) => {
-    s.classList.remove('active');
-    s.classList.add('hidden');
-  });
-  section.classList.remove('hidden');
-  section.classList.add('active');
+function setBusy(busy, label) {
+  elBtnTransform.disabled = busy;
+  elTransformSpin.classList.toggle('hidden', !busy);
+  elTransformIcon.classList.toggle('hidden', busy);
+  elTransformLabel.textContent = busy ? label : 'Transform & Download';
+  elDropZone.classList.toggle('is-disabled', busy);
+  elControls.disabled = busy;
+}
+
+/** Output ready: swap the Transform button for the done box and lock the
+ *  controls (the source is gone, so changing shift/date would do nothing). */
+function showDone() {
+  elDoneFname.textContent = outputFilename;
+  elBtnTransform.classList.add('hidden');
+  elDoneBox.classList.remove('hidden');
+  elControls.disabled = true;
+  elPreviewStats.textContent = 'Exported';
 }
 
 function showError(message) {
-  elErrMsg.textContent = message;
-  showSection(elSecError);
-
   Audit.log({
     event:          'export_error',
     shift:          selectedShift,
@@ -745,20 +779,21 @@ function showError(message) {
     input_filename: inputFilename,
     error_message:  message,
   });
+
+  resetUploadState();
+  elErrMsg.textContent = message;
+  elErrBox.classList.remove('hidden');
+}
+
+function hideError() {
+  elErrBox.classList.add('hidden');
+  elErrMsg.textContent = '';
 }
 
 function setDropZoneSelected(isSelected) {
-  if (isSelected) {
-    elDropZone.classList.add('file-selected');
-    elDzIdle.classList.add('hidden');
-    elDzSelected.classList.remove('hidden');
-    elFileActionRow.classList.remove('hidden');
-  } else {
-    elDropZone.classList.remove('file-selected');
-    elDzIdle.classList.remove('hidden');
-    elDzSelected.classList.add('hidden');
-    elFileActionRow.classList.add('hidden');
-  }
+  elDropZone.classList.toggle('file-selected', isSelected);
+  elDzIdle.classList.toggle('hidden', isSelected);
+  elDzSelected.classList.toggle('hidden', !isSelected);
 }
 
 function resetUploadState() {
@@ -767,25 +802,22 @@ function resetUploadState() {
   clearOutputData();
 
   setDropZoneSelected(false);
-  elPreviewPanel.classList.add('hidden');
-  elBtnTransform.classList.add('hidden');
+  elControls.disabled = false;
+  elBtnTransform.classList.remove('hidden');
+  elBtnTransform.disabled = true;
+  elDoneBox.classList.add('hidden');
 
-  // Clear preview tables
+  // Clear preview
+  elPreviewScroll.classList.add('hidden');
+  elPreviewEmpty.classList.remove('hidden');
   elPrevThead.innerHTML = '';
   elPrevTbody.innerHTML = '';
   elPreviewStats.textContent = '';
+  elPreviewStats.classList.add('hidden');
   elPreviewMore.textContent  = '';
   elPreviewWarn.classList.add('hidden');
   elDataDate.value = '';
-  elDateHint.textContent = '';
-}
-
-function resetAll() {
-  clearSourceData();
-  clearOutputData();
-
-  resetUploadState();
-  showSection(elSecUpload);
+  elDateHint.textContent = 'เลือกไฟล์ก่อน — ระบบจะหาวันที่ให้อัตโนมัติ';
 }
 
 // ============================================================

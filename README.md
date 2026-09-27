@@ -22,13 +22,22 @@ Takes a raw Nozomi Vantage export (54 columns, `Vantage export` sheet) and outpu
 
 ## How to Use
 
-1. **Open the app** — either at the hosted URL or by opening `index.html` directly in your browser
-2. **Drop your Nozomi export** — drag and drop the `export_alert_*.xlsx` file onto the drop zone, or click to browse
-3. **Select the shift** — click **Day**, **Night** or **Full Day** (☀️ / 🌙 / 🌓)
-4. **Check the preview** — the app shows the first 5 rows of key columns so you can verify it's the right file
-5. **Check the shift date** — auto-detected from alert times (Thailand time, UTC+7); edit it if wrong. A warning shows how many rows fall outside the shift window
-6. **Click "Transform & Download"** — the first time, you'll be asked for your name (remembered on this device)
-7. **Transform Another** — click the button to start over for the next shift
+The app has three pages in the sidebar: **Transform**, **Extension** and **Audit** (`#transform`, `#extension`, `#audit`). Each fits on one screen.
+
+1. **Open the app**: either at the hosted URL or by opening `index.html` directly in your browser
+2. **Drop your Nozomi export**: drag and drop the `export_alert_*.xlsx` file onto the drop zone (left column), or click to browse. Dropping another file replaces it
+3. **Select the shift**: **Day**, **Night** or **Full Day**
+4. **Check the preview**: the right column shows the first 100 rows of key columns (scrolls inside the panel)
+5. **Check the shift date**: auto-detected from alert times (Thailand time, UTC+7); edit it if wrong. A warning shows how many rows fall outside the shift window
+6. **Click "Transform & Download"**: the file downloads immediately. The first time, you'll be asked for your name (remembered on this device)
+7. **Next file**: click **ไฟล์ถัดไป** or just drop the next file
+
+### Audit page
+
+Shows usage from the Google Sheet log (last 90 days, max 2,000 rows) without opening the Sheet:
+KPIs (today / 7 days / users / errors / web vs extension), a per-user table, and a searchable,
+filterable log. Data loads when the page opens; press **Refresh** to reload. Anyone who can open
+the site can see this page, so `device_id` and `user_agent` are never returned by the endpoint.
 
 ### Shift windows (Thailand time)
 
@@ -70,6 +79,7 @@ To see who uses the tool, each export sends **metadata only** to a Google Sheet
 | Error message (if the export failed) | |
 | Random device ID, browser user-agent | |
 
+- The log (without device ID / user-agent) is **visible to everyone** on the Audit page
 - Your name, device ID and any unsent log entries are kept in `localStorage`
 - Logging is fire-and-forget: it never blocks or breaks a download; failed sends retry on next visit
 - The Content-Security-Policy (`vercel.json`) only allows network requests to `script.google.com`
@@ -112,7 +122,7 @@ Every `git push` to `main` automatically redeploys.
 | Layer | Technology |
 |---|---|
 | Markup | HTML5 (semantic, accessible) |
-| Style | Vanilla CSS (custom properties, dark theme, CSS animations) |
+| Style | Vanilla CSS (custom properties, dark zinc theme), inline Lucide SVG icons |
 | Logic | Vanilla JavaScript ES2020 (no frameworks, no build tools) |
 | Excel read | [SheetJS CE](https://sheetjs.com/) `0.20.3`, self-hosted in `lib/` (patched for CVE-2023-30533 / CVE-2024-22363) |
 | Excel write | [xlsx-js-style](https://github.com/gitbrent/xlsx-js-style) `1.2.0`, self-hosted in `lib/` (styles; only writes our own output) |
@@ -126,10 +136,11 @@ Every `git push` to `main` automatically redeploys.
 
 ```
 nozomi-summary/
-├── index.html   — Single-page app (all UI states)
-├── style.css    — Dark theme, animations, responsive layout
-├── app.js       — Transform engine + FileReader + SheetJS integration
+├── index.html   — Single-page app shell (sidebar + Transform / Extension / Audit views)
+├── style.css    — Dark zinc theme, one-screen layout, responsive
+├── app.js       — Router + transform engine + FileReader + SheetJS integration
 ├── audit.js     — Usage log client (copied to extension/src/audit.js)
+├── audit-view.js — Audit page (reads the log via Apps Script ?action=logs)
 ├── lib/         — Self-hosted SheetJS builds
 ├── vercel.json  — Security headers (CSP etc.)
 ├── apps-script/ — Usage log receiver (Code.gs) + setup guide
